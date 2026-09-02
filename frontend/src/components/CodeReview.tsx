@@ -10,7 +10,7 @@ interface Props {
   operationType: OperationType
   resourceType: string
   targetResourceAddress: string
-  onPlanComplete: (logs: string[]) => void
+  onPlanComplete: (logs: string[], fixedTf?: string) => void
   onError: (error: string) => void
   onBack: () => void
 }
@@ -50,10 +50,11 @@ const CodeReview: React.FC<Props> = ({
     [onError],
   )
 
-  const handlePlanComplete = useCallback(() => {
+  const handlePlanComplete = useCallback((fixedTf?: string) => {
     setPlanning(false)
     setPlanDone(true)
-  }, [])
+    onPlanComplete(planLogs, fixedTf)
+  }, [planLogs, onPlanComplete])
 
   const startPlan = useCallback(() => {
     setPlanning(true)

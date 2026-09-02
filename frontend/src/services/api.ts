@@ -112,7 +112,7 @@ export function executePlan(
   resourceType: string,
   onMessage: (msg: SSEMessage) => void,
   onError: (err: Error) => void,
-  onComplete: () => void,
+  onComplete: (fixedTf?: string) => void,
 ): () => void {
   return startSSE('/execute/plan', { tf_content: tfContent, resource_type: resourceType }, onMessage, onError, onComplete)
 }
@@ -155,9 +155,10 @@ function startSSE(
   body: Record<string, unknown>,
   onMessage: (msg: SSEMessage) => void,
   onError: (err: Error) => void,
-  onComplete: () => void,
+  onComplete: (fixedTf?: string) => void,
 ): () => void {
   let cancelled = false
+  let fixedTf: string | undefined
 
   fetch(`${API_BASE}${path}`, {
     method: 'POST',
@@ -186,9 +187,12 @@ function startSSE(
           if (line.startsWith('data: ')) {
             try {
               const msg = JSON.parse(line.slice(6)) as SSEMessage
+              if (msg.fixed_tf) {
+                fixedTf = msg.fixed_tf
+              }
               onMessage(msg)
               if (msg.status === 'completed') {
-                onComplete()
+                onComplete(fixedTf)
                 return
               }
               if (msg.status === 'error') {
@@ -201,7 +205,7 @@ function startSSE(
           }
         }
       }
-      onComplete()
+      onComplete(fixedTf)
     })
     .catch((err) => {
       if (!cancelled) onError(err)

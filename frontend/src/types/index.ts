@@ -66,6 +66,7 @@ export interface SSEMessage {
   log?: string
   status?: 'running' | 'completed' | 'error'
   error?: string
+  fixed_tf?: string
 }
 
 /** 操作类型 */

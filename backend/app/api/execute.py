@@ -50,14 +50,31 @@ async def _stream_generator(async_gen):
         yield f"data: {json.dumps({'status': 'error', 'error': str(e)})}\n\n"
 
 
+async def _stream_generator_with_fix(tf_manager, async_gen):
+    """将异步生成器转换为 SSE 流，自动修复完成后发送修复后的代码"""
+    try:
+        async for line in async_gen:
+            yield f"data: {json.dumps({'log': line})}\n\n"
+        # 如果有自动修复后的代码，发送给前端
+        if tf_manager._latest_fixed_tf is not None:
+            yield f"data: {json.dumps({{'fixed_tf': tf_manager._latest_fixed_tf}})}\n\n"
+        yield "data: {\"status\": \"completed\"}\n\n"
+        # 清理
+        tf_manager._latest_fixed_tf = None
+    except Exception as e:
+        yield f"data: {json.dumps({'status': 'error', 'error': str(e)})}\n\n"
+
+
 @router.post("/plan")
 async def execute_plan(req: PlanRequest):
     """执行 terraform plan，SSE 流式返回日志"""
     if not req.tf_content.strip():
         raise HTTPException(status_code=400, detail="Terraform 配置不能为空")
 
+    tf_manager = get_tf_manager()
+
     return StreamingResponse(
-        _stream_generator(get_tf_manager().plan(req.tf_content, req.resource_type)),
+        _stream_generator_with_fix(tf_manager, tf_manager.plan(req.tf_content, req.resource_type)),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

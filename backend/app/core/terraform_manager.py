@@ -31,6 +31,7 @@ class TerraformManager:
         self.docker = DockerEngine()
         self._llm: Optional[BaseLLMProvider] = None
         self.schemas: dict[str, dict] = {}
+        self._latest_fixed_tf: Optional[str] = None  # 存储最近一次自动修复后的代码
         self._load_schemas()
 
     @property
@@ -138,12 +139,42 @@ class TerraformManager:
         return tf_content.strip()
 
     async def plan(self, tf_content: str, resource_type: str) -> AsyncGenerator[str, None]:
-        """执行 terraform plan，实时返回输出"""
-        async for line in self.docker.run_terraform(
-            command=["plan"],
-            tf_content=tf_content,
-        ):
-            yield line
+        """执行 terraform plan，失败时自动修复并重试"""
+        max_retries = 2
+        current_tf = tf_content
+        self._latest_fixed_tf = None
+
+        for attempt in range(max_retries + 1):
+            if attempt > 0:
+                yield f"\n--- 自动修复尝试 ({attempt}/{max_retries}) ---\n"
+
+            lines = []
+            error_detected = False
+            async for line in self.docker.run_terraform(
+                command=["plan"],
+                tf_content=current_tf,
+            ):
+                lines.append(line)
+                yield line
+                if "[ERROR]" in line:
+                    error_detected = True
+
+            if not error_detected:
+                if attempt > 0:
+                    self._latest_fixed_tf = current_tf
+                return  # plan 成功
+
+            if attempt < max_retries:
+                error_log = "\n".join(lines)
+                yield f"\n[INFO] 检测到错误，正在自动修复...\n"
+                try:
+                    current_tf = await self.fix_tf(current_tf, error_log)
+                    yield f"[INFO] 配置已修复，重新执行 plan...\n"
+                except Exception as e:
+                    yield f"[ERROR] 自动修复失败: {e}\n"
+                    return
+
+        yield "\n[ERROR] 已达到最大重试次数，请检查配置\n"
 
     async def plan_destroy(self, resource_address: str) -> AsyncGenerator[str, None]:
         """执行 terraform plan -destroy，实时返回输出"""

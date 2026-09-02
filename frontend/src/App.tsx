@@ -70,8 +70,11 @@ const App: React.FC = () => {
 
   // 步骤3: Plan 完成
   const handlePlanComplete = useCallback(
-    (logs: string[]) => {
+    (logs: string[], fixedTf?: string) => {
       setExecutionLogs(logs)
+      if (fixedTf) {
+        setTfContent(fixedTf)
+      }
       updateStep(2, 'finish')
       updateStep(3, 'process')
       setCurrentStep(3)
