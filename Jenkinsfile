@@ -4,7 +4,9 @@ pipeline {
     environment {
         GIT_REPO = 'https://github.com/JaciCao-123/terraform-agent.git'
         GIT_BRANCH = 'main'
-        DEPLOY_SERVER = '47.76.53.232'
+        DEPLOY_SERVER = '172.21.36.91'
+        SSH_KEY = '/var/jenkins_home/.ssh/id_ed25519'
+        DEPLOY_PATH = '/opt/terraform-agent'
     }
 
     stages {
@@ -14,28 +16,39 @@ pipeline {
             }
         }
 
-        stage('Verify') {
+        stage('Build & Deploy') {
             steps {
                 script {
-                    echo "=== 代码检查 ==="
-                    echo "版本: ${env.GIT_COMMIT}"
-                    echo "分支: ${env.BRANCH_NAME}"
-                    echo "部署服务器: ${DEPLOY_SERVER}"
-                }
-            }
-        }
+                    echo "=== 部署到 ${DEPLOY_SERVER} ==="
+                    sh """
+                        ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no root@${DEPLOY_SERVER} bash -s << 'SCRIPT'
+set -euo pipefail
 
-        stage('Notify Server') {
-            steps {
-                script {
-                    echo "=== 触发部署 ==="
-                    echo "Jenkins 无法直接 SSH 到部署服务器(网络隔离)"
-                    echo "部署服务器已配置自动拉取脚本"
-                    echo ""
-                    echo "如需手动部署，在服务器上执行:"
-                    echo "  ssh root@${DEPLOY_SERVER} 'bash /opt/terraform-agent/deploy.sh'"
-                    echo ""
-                    echo "或等待自动部署 (每 5 分钟检查更新)"
+cd ${DEPLOY_PATH}
+
+echo '=== 1. 拉取代码 ==='
+if [ -d .git ]; then
+    git pull
+else
+    rm -rf /tmp/tf-agent
+    git clone -b ${GIT_BRANCH} ${GIT_REPO} /tmp/tf-agent
+    rsync -av --exclude='deploy.sh' --exclude='.env' /tmp/tf-agent/ .
+    rm -rf /tmp/tf-agent
+fi
+
+echo '=== 2. 构建镜像 ==='
+docker compose -f docker-compose.prod.yml build
+
+echo '=== 3. 重启服务 ==='
+docker compose -f docker-compose.prod.yml down || true
+docker compose -f docker-compose.prod.yml up -d
+
+echo '=== 4. 清理 ==='
+docker image prune -f
+
+echo '=== 部署完成 ==='
+SCRIPT
+                    """
                 }
             }
         }
@@ -43,10 +56,10 @@ pipeline {
 
     post {
         success {
-            echo "✅ 构建成功 - 代码已推送到 GitHub，等待服务器部署"
+            echo "✅ 部署成功 - 前端: http://${DEPLOY_SERVER}:3001"
         }
         failure {
-            echo "❌ 构建失败，请检查日志"
+            echo "❌ 部署失败，请检查日志"
         }
     }
 }
