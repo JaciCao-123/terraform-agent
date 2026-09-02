@@ -3,6 +3,73 @@
 from typing import Optional
 
 
+# Few-shot 示例：每种资源类型的正确 HCL 格式
+FEW_SHOT_EXAMPLES = {
+    "oss": """## 示例：创建 OSS Bucket
+
+resource "alicloud_oss_bucket" "this" {
+  bucket        = "my-app-data-store"
+  storage_class = "Standard"
+}
+
+resource "alicloud_oss_bucket_acl" "this" {
+  bucket = alicloud_oss_bucket.this.id
+  acl    = "private"
+}
+
+output "bucket_name" {
+  value = alicloud_oss_bucket.this.bucket
+}
+
+output "bucket_endpoint" {
+  value = alicloud_oss_bucket.this.extranet_endpoint
+}""",
+    "ecs": """## 示例：创建 ECS 实例
+
+resource "alicloud_instance" "this" {
+  instance_name              = "web-server-01"
+  instance_type              = "ecs.g6.large"
+  image_id                   = "aliyun_2_1903_x64_20G_alibase_2024"
+  system_disk_size           = 40
+  internet_charge_type       = "PayByTraffic"
+  internet_max_bandwidth_out = 5
+  password                   = "MyPass123!"
+  count                      = 1
+}
+
+output "ecs_public_ip" {
+  value = alicloud_instance.this.public_ip
+}""",
+    "rds": """## 示例：创建 RDS 数据库
+
+resource "alicloud_db_instance" "this" {
+  instance_name        = "my-app-database"
+  engine               = "MySQL"
+  engine_version       = "8.0"
+  instance_type        = "rds.mysql.t3.small"
+  db_instance_storage  = 20
+  account_name         = "db_user"
+  account_password     = "SecurePass1!"
+}
+
+output "rds_connection_string" {
+  value = alicloud_db_instance.this.connection_string
+}""",
+    "slb": """## 示例：创建负载均衡 SLB
+
+resource "alicloud_slb_load_balancer" "this" {
+  load_balancer_name   = "my-app-slb"
+  address_type         = "internet"
+  load_balancer_spec   = "slb.s1.small"
+  bandwidth            = 5
+}
+
+output "slb_address" {
+  value = alicloud_slb_load_balancer.this.address
+}""",
+}
+
+
 def build_terraform_generation_prompt(
     resource_type: str,
     resource_display_name: str,
@@ -82,6 +149,10 @@ def build_terraform_generation_prompt(
         )
         if user_description:
             user_prompt += f"用户补充的自然语言描述:\n{user_description}\n\n"
+        # 添加 few-shot 示例
+        example = FEW_SHOT_EXAMPLES.get(resource_type)
+        if example:
+            user_prompt += f"请参考以下示例格式（注意示例中的参数值是示意，请使用用户提供的实际参数值）：\n{example}\n\n"
         user_prompt += "请直接输出 HCL 代码。"
     else:
         user_prompt = (
@@ -93,6 +164,10 @@ def build_terraform_generation_prompt(
         )
         if user_description:
             user_prompt += f"用户补充的自然语言描述:\n{user_description}\n\n"
+        # 添加 few-shot 示例
+        example = FEW_SHOT_EXAMPLES.get(resource_type)
+        if example:
+            user_prompt += f"请参考以下示例格式（注意示例中的参数值是示意，请使用用户提供的实际参数值）：\n{example}\n\n"
         user_prompt += "请直接输出 HCL 代码。"
 
     return system_prompt, user_prompt
