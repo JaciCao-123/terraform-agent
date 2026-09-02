@@ -33,6 +33,7 @@ export interface ResourceInstance {
   id: string
   type: string
   name: string
+  display_name?: string
   address: string
   provider?: string
 }

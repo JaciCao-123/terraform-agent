@@ -121,7 +121,7 @@ const CodeReview: React.FC<Props> = ({
             size="large"
             onClick={startPlan}
             loading={planning}
-            style={{ borderRadius: 8, minWidth: 140, background: 'linear-gradient(135deg, #2563eb, #6366f1)', border: 'none' }}
+            style={{ borderRadius: 8, minWidth: 140, background: 'linear-gradient(135deg, #2563eb, #6366f1)', border: 'none', color: '#fff' }}
           >
             执行 Plan
           </Button>
@@ -130,7 +130,7 @@ const CodeReview: React.FC<Props> = ({
             type="primary"
             size="large"
             onClick={handleConfirm}
-            style={{ borderRadius: 8, minWidth: 140, background: 'linear-gradient(135deg, #2563eb, #6366f1)', border: 'none' }}
+            style={{ borderRadius: 8, minWidth: 140, background: 'linear-gradient(135deg, #2563eb, #6366f1)', border: 'none', color: '#fff' }}
           >
             确认，下一步
           </Button>

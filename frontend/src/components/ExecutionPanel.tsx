@@ -107,7 +107,7 @@ const ExecutionPanel: React.FC<Props> = ({
             size="large"
             onClick={startApply}
             loading={applying}
-            style={{ borderRadius: 8, minWidth: 140, background: 'linear-gradient(135deg, #2563eb, #6366f1)', border: 'none' }}
+            style={{ borderRadius: 8, minWidth: 140, background: 'linear-gradient(135deg, #2563eb, #6366f1)', border: 'none', color: '#fff' }}
           >
             {operationType === 'destroy' ? '开始执行 Destroy' : '开始执行 Apply'}
           </Button>
@@ -116,7 +116,7 @@ const ExecutionPanel: React.FC<Props> = ({
             type="primary"
             size="large"
             onClick={handleFinish}
-            style={{ borderRadius: 8, minWidth: 140, background: 'linear-gradient(135deg, #2563eb, #6366f1)', border: 'none' }}
+            style={{ borderRadius: 8, minWidth: 140, background: 'linear-gradient(135deg, #2563eb, #6366f1)', border: 'none', color: '#fff' }}
           >
             查看结果
           </Button>

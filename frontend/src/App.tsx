@@ -9,7 +9,6 @@ import TerminalView from './components/TerminalView'
 import type { OperationType, ResourceSchema } from './types'
 
 const { Header, Content } = Layout
-const { Title } = Typography
 
 type StepStatus = 'wait' | 'process' | 'finish' | 'error'
 
@@ -148,44 +147,44 @@ const App: React.FC = () => {
     >
       <Layout style={{ minHeight: '100vh', background: '#f8fafc' }}>
         <Header
-          style={{
-            background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)',
-            padding: '0 24px',
-            display: 'flex',
-            alignItems: 'center',
-            height: 64,
-            cursor: 'pointer',
-            borderBottom: '1px solid #e2e8f0',
-            position: 'sticky',
-            top: 0,
-            zIndex: 100,
-            backdropFilter: 'blur(12px)',
-          }}
-          onClick={handleReset}
-        >
-          <div
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 10,
-              background: 'linear-gradient(135deg, #2563eb, #6366f1)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginRight: 12,
-              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.4)',
-            }}
-          >
-            <CloudServerOutlined style={{ fontSize: 18, color: '#ffffff' }} />
-          </div>
-          <div>
-            <Title level={4} style={{ margin: 0, color: '#f1f5f9', fontSize: 18, letterSpacing: 0.5, fontWeight: 700 }}>
-              Terraform Agent
-            </Title>
-            <div style={{ fontSize: 11, color: '#93c5fd', marginTop: -2 }}>云资源管理平台</div>
-          </div>
-        </Header>
-        <Content style={{ padding: '24px', maxWidth: 900, margin: '0 auto', width: '100%' }}>
+  style={{
+    background: '#1e293b',
+    padding: '0 24px',
+    display: 'flex',
+    alignItems: 'center',
+    height: 56,
+    lineHeight: '56px',
+    cursor: 'pointer',
+    position: 'sticky',
+    top: 0,
+    zIndex: 100,
+    boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
+  }}
+  onClick={handleReset}
+>
+  <div
+    style={{
+      width: 32,
+      height: 32,
+      borderRadius: 8,
+      background: 'linear-gradient(135deg, #2563eb, #6366f1)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 10,
+      flexShrink: 0,
+    }}
+  >
+    <CloudServerOutlined style={{ fontSize: 16, color: '#ffffff' }} />
+  </div>
+  <div style={{ overflow: 'hidden' }}>
+    <div style={{ color: '#f1f5f9', fontSize: 16, fontWeight: 700, lineHeight: 1.3, whiteSpace: 'nowrap' }}>
+      Terraform Agent
+    </div>
+    <div style={{ fontSize: 10, color: '#93c5fd', lineHeight: 1.2 }}>云资源管理平台</div>
+  </div>
+</Header>
+        <Content style={{ padding: '16px 12px 24px 12px', maxWidth: 800, margin: '0 auto', width: '100%' }}>
           <div
             style={{
               background: '#ffffff',
@@ -234,7 +233,7 @@ const App: React.FC = () => {
               resourceType={resourceType || ''}
               targetResourceAddress={targetResourceAddress}
               onPlanComplete={handlePlanComplete}
-              onError={(err) => handleError(2, err)}
+              onError={(err: string) => handleError(2, err)}
               onBack={() => {
                 updateStep(1, 'process')
                 updateStep(2, 'wait')
@@ -250,7 +249,7 @@ const App: React.FC = () => {
               resourceType={resourceType || ''}
               targetResourceAddress={targetResourceAddress}
               onApplyComplete={handleApplyComplete}
-              onError={(err) => handleError(3, err)}
+              onError={(err: string) => handleError(3, err)}
               onBack={() => {
                 updateStep(2, 'process')
                 updateStep(3, 'wait')
@@ -287,7 +286,7 @@ const App: React.FC = () => {
                     icon={<ReloadOutlined />}
                     onClick={handleReset}
                     size="large"
-                    style={{ borderRadius: 8, background: 'linear-gradient(135deg, #2563eb, #6366f1)', border: 'none' }}
+                    style={{ borderRadius: 8, background: 'linear-gradient(135deg, #2563eb, #6366f1)', border: 'none', color: '#fff' }}
                   >
                     重新开始
                   </Button>

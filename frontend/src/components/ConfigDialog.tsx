@@ -215,7 +215,7 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
               icon={<ThunderboltOutlined />}
               onClick={operationType === 'update' ? handleUpdateGenerate : handleGenerate}
               loading={generating}
-              style={{ borderRadius: 8, minWidth: 160, background: 'linear-gradient(135deg, #2563eb, #6366f1)', border: 'none' }}
+              style={{ borderRadius: 8, minWidth: 160, background: 'linear-gradient(135deg, #2563eb, #6366f1)', border: 'none', color: '#fff' }}
             >
               {operationType === 'update' ? '生成更新配置' : '生成 Terraform 配置'}
             </Button>
@@ -246,7 +246,7 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
                 {generatedTf}
               </pre>
               <Space style={{ marginTop: 16 }}>
-                <Button type="primary" size="large" onClick={handleConfirm} style={{ borderRadius: 8, minWidth: 140, background: 'linear-gradient(135deg, #2563eb, #6366f1)', border: 'none' }}>
+                <Button type="primary" size="large" onClick={handleConfirm} style={{ borderRadius: 8, minWidth: 140, background: 'linear-gradient(135deg, #2563eb, #6366f1)', border: 'none', color: '#fff' }}>
                   确认，下一步 Plan
                 </Button>
                 <Button onClick={() => setGeneratedTf(null)} style={{ borderRadius: 8 }}>

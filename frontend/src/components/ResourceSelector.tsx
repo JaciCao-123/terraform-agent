@@ -170,7 +170,7 @@ const ResourceSelector: React.FC<Props> = ({ operationType, onOperationTypeChang
               style={{
                 borderRadius: 8,
                 minWidth: 120,
-                ...(operationType === 'create' && { background: 'linear-gradient(135deg, #2563eb, #6366f1)', border: 'none' }),
+                ...(operationType === 'create' && { background: 'linear-gradient(135deg, #2563eb, #6366f1)', border: 'none', color: '#fff' }),
               }}
             >
               创建资源
@@ -201,7 +201,7 @@ const ResourceSelector: React.FC<Props> = ({ operationType, onOperationTypeChang
               style={{
                 borderRadius: 8,
                 minWidth: 120,
-                ...(operationType === 'update' && { background: 'linear-gradient(135deg, #2563eb, #6366f1)', border: 'none' }),
+                ...(operationType === 'update' && { background: 'linear-gradient(135deg, #2563eb, #6366f1)', border: 'none', color: '#fff' }),
               }}
             >
               修改资源
@@ -255,7 +255,7 @@ const ResourceSelector: React.FC<Props> = ({ operationType, onOperationTypeChang
                       size="large"
                       popupMatchSelectWidth={false}
                       options={filtered.map((inst) => ({
-                        label: `[${inst.type.toUpperCase()}] ${inst.name}  (${inst.id})`,
+                        label: `[${inst.type.toUpperCase()}] ${inst.display_name || inst.name || inst.id}`,
                         value: inst.address,
                       }))}
                     />
@@ -279,7 +279,7 @@ const ResourceSelector: React.FC<Props> = ({ operationType, onOperationTypeChang
                         </Tag>
                       </Descriptions.Item>
                       <Descriptions.Item label={<span style={{ color: '#64748b' }}>资源名称</span>}>
-                        <span style={{ color: '#1e293b' }}>{selectedInstanceDetail.name}</span>
+                        <span style={{ color: '#1e293b' }}>{selectedInstanceDetail.display_name || selectedInstanceDetail.name || selectedInstanceDetail.id}</span>
                       </Descriptions.Item>
                       <Descriptions.Item label={<span style={{ color: '#64748b' }}>资源 ID</span>}>
                         <span style={{ color: '#1e293b', fontFamily: 'monospace', fontSize: 12 }}>{selectedInstanceDetail.id}</span>
@@ -310,7 +310,7 @@ const ResourceSelector: React.FC<Props> = ({ operationType, onOperationTypeChang
           style={{
             borderRadius: 8,
             minWidth: 180,
-            ...(operationType !== 'destroy' && { background: 'linear-gradient(135deg, #2563eb, #6366f1)', border: 'none' }),
+            ...(operationType !== 'destroy' && { background: 'linear-gradient(135deg, #2563eb, #6366f1)', border: 'none', color: '#fff' }),
           }}
         >
           {operationType === 'destroy' ? '下一步：确认销毁' : operationType === 'update' ? '下一步：修改参数' : '下一步：配置参数'}

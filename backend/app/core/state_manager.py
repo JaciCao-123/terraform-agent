@@ -136,14 +136,7 @@ class StateManager:
                         values = values[0]
                         if "attributes" in values:
                             values = values["attributes"]
-                        resources.append({
-                            "id": values.get("id", res_address),
-                            "type": self.TERRAFORM_TO_RESOURCE_TYPE[res_type],
-                            "name": res_name,
-                            "address": res_address,
-                            "provider": res.get("provider", ""),
-                            "_detail": self._extract_resource_detail(res_type, values),
-                        })
+                        resources.append(self._make_resource_entry(res_type, res_name, res_address, values, res.get("provider", "")))
         except (KeyError, TypeError, AttributeError):
             pass
 
@@ -158,14 +151,7 @@ class StateManager:
                 if res_type in self.TERRAFORM_TO_RESOURCE_TYPE:
                     # 获取资源 ID 和更多信息
                     values = res.get("values", {}) or {}
-                    resources.append({
-                        "id": values.get("id", res_address),
-                        "type": self.TERRAFORM_TO_RESOURCE_TYPE[res_type],
-                        "name": res_name,
-                        "address": res_address,
-                        "provider": res.get("provider", ""),
-                        "_detail": self._extract_resource_detail(res_type, values),
-                    })
+                    resources.append(self._make_resource_entry(res_type, res_name, res_address, values, res.get("provider", "")))
         except (KeyError, TypeError, AttributeError):
             pass
 
@@ -184,11 +170,13 @@ class StateManager:
                     for res_name, res_data in module.get("resources", {}).items():
                         res_type = res_data.get("type", "")
                         if res_type in self.TERRAFORM_TO_RESOURCE_TYPE:
+                            res_id = res_data.get("primary", {}).get("id", res_name)
                             resources.append({
-                                "id": res_data.get("primary", {}).get("id", res_name),
+                                "id": res_id,
                                 "type": self.TERRAFORM_TO_RESOURCE_TYPE[res_type],
                                 "name": res_name.split(".")[-1] if "." in res_name else res_name,
                                 "address": res_name,
+                                "display_name": res_id,
                                 "provider": res_data.get("provider", ""),
                             })
             except (KeyError, TypeError, AttributeError):
@@ -213,18 +201,27 @@ class StateManager:
             res_address = res.get("address", f"{res_type}.{res_name}")
 
             if res_type in self.TERRAFORM_TO_RESOURCE_TYPE:
-                # 获取资源 ID 和更多信息
                 values = res.get("values", {}) or {}
-                result.append({
-                    "id": values.get("id", res_address),
-                    "type": self.TERRAFORM_TO_RESOURCE_TYPE[res_type],
-                    "name": res_name,
-                    "address": res_address,
-                    "provider": res.get("provider", ""),
-                    # 额外信息用于前端展示
-                    "_detail": self._extract_resource_detail(res_type, values),
-                })
+                result.append(self._make_resource_entry(res_type, res_name, res_address, values, res.get("provider", "")))
         return result
+
+    def _make_resource_entry(self, res_type: str, res_name: str, res_address: str, values: dict, provider: str) -> dict:
+        """统一构建资源条目，自动计算 display_name"""
+        resource_id = values.get("id", res_address)
+        # 当 Terraform 资源名是 "this" 等通用名称时，使用实际资源 ID 作为显示名
+        if res_name in ("this", "main", "default") or res_name == res_type.split("_")[-1]:
+            display_name = resource_id
+        else:
+            display_name = res_name
+        return {
+            "id": resource_id,
+            "type": self.TERRAFORM_TO_RESOURCE_TYPE[res_type],
+            "name": res_name,
+            "display_name": display_name,
+            "address": res_address,
+            "provider": provider,
+            "_detail": self._extract_resource_detail(res_type, values),
+        }
 
     def _extract_resource_detail(self, res_type: str, values: dict) -> dict:
         """提取资源的核心信息用于前端展示"""
