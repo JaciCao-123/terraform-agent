@@ -18,8 +18,8 @@ interface Props {
 
 const cardStyle = {
   borderRadius: 14,
-  border: '1px solid #334155',
-  background: 'linear-gradient(135deg, #1e293b 0%, #1a2332 100%)',
+  border: '1px solid #e2e8f0',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
 }
 
 const ExecutionPanel: React.FC<Props> = ({
@@ -65,21 +65,21 @@ const ExecutionPanel: React.FC<Props> = ({
 
   return (
     <Card style={cardStyle}>
-      <Title level={4} style={{ marginBottom: 24, color: '#f1f5f9', fontSize: 18 }}>
+      <Title level={4} style={{ marginBottom: 24, color: '#1e293b', fontSize: 18 }}>
         {operationType === 'destroy' ? '执行 Terraform Destroy' : '执行 Terraform Apply'}
       </Title>
 
       {operationType === 'destroy' && (
         <Alert
           type="warning"
-          message={<span style={{ color: '#fbbf24' }}>销毁操作不可逆，请确认已备份重要数据</span>}
+          message="销毁操作不可逆，请确认已备份重要数据"
           showIcon
-          style={{ marginBottom: 16, borderRadius: 8, background: '#1f1313', border: '1px solid #7f1d1d' }}
+          style={{ marginBottom: 16, borderRadius: 8, background: '#fef2f2', border: '1px solid #fecaca' }}
         />
       )}
 
       <div style={{ marginBottom: 8 }}>
-        <strong style={{ fontSize: 13, color: '#94a3b8' }}>
+        <strong style={{ fontSize: 13, color: '#64748b' }}>
           {operationType === 'destroy' ? 'Terraform Destroy' : 'Terraform Apply'} 执行日志
         </strong>
       </div>
@@ -94,9 +94,9 @@ const ExecutionPanel: React.FC<Props> = ({
       {applyDone && (
         <Alert
           type="success"
-          message={<span style={{ color: '#86efac' }}>{`${operationType === 'create' ? 'Create' : operationType === 'update' ? 'Update' : 'Destroy'} 执行完成`}</span>}
+          message={`${operationType === 'create' ? 'Create' : operationType === 'update' ? 'Update' : 'Destroy'} 执行完成`}
           showIcon
-          style={{ marginTop: 16, borderRadius: 8, background: '#022c22', border: '1px solid #065f46' }}
+          style={{ marginTop: 16, borderRadius: 8, background: '#f0fdf4', border: '1px solid #bbf7d0' }}
         />
       )}
 
@@ -107,7 +107,7 @@ const ExecutionPanel: React.FC<Props> = ({
             size="large"
             onClick={startApply}
             loading={applying}
-            style={{ borderRadius: 8, minWidth: 140, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', border: 'none' }}
+            style={{ borderRadius: 8, minWidth: 140, background: 'linear-gradient(135deg, #2563eb, #6366f1)', border: 'none' }}
           >
             {operationType === 'destroy' ? '开始执行 Destroy' : '开始执行 Apply'}
           </Button>
@@ -116,7 +116,7 @@ const ExecutionPanel: React.FC<Props> = ({
             type="primary"
             size="large"
             onClick={handleFinish}
-            style={{ borderRadius: 8, minWidth: 140, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', border: 'none' }}
+            style={{ borderRadius: 8, minWidth: 140, background: 'linear-gradient(135deg, #2563eb, #6366f1)', border: 'none' }}
           >
             查看结果
           </Button>

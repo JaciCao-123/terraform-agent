@@ -18,6 +18,12 @@ interface Props {
   onBack: () => void
 }
 
+const cardStyle = {
+  borderRadius: 14,
+  border: '1px solid #e2e8f0',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+}
+
 const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, resourceId, targetResourceAddress, onComplete, onBack }) => {
   const [form] = Form.useForm()
   const [generating, setGenerating] = useState(false)
@@ -113,7 +119,7 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
 
   const renderFormItem = (param: ResourceSchema['core_params'][0]) => {
     const commonProps = {
-      label: <span style={{ color: '#cbd5e1', fontSize: 13 }}>{param.label}</span>,
+      label: <span style={{ color: '#475569', fontSize: 13 }}>{param.label}</span>,
       name: param.name,
       rules: [
         { required: param.required, message: `请输入${param.label}` },
@@ -123,19 +129,14 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
         ...(param.pattern ? [{ pattern: new RegExp(param.pattern), message: param.description || '格式不正确' }] : []),
       ],
       initialValue: param.default,
-      tooltip: { title: param.description, color: '#334155' },
+      tooltip: { title: param.description, color: '#f8fafc' },
     }
 
     switch (param.type) {
       case 'select':
         return (
           <Form.Item {...commonProps} key={param.name}>
-            <Select
-              placeholder={`请选择${param.label}`}
-              options={param.options?.map((o) => ({ label: o, value: o }))}
-              size="large"
-              style={{ borderRadius: 8 }}
-            />
+            <Select placeholder={`请选择${param.label}`} options={param.options?.map((o) => ({ label: o, value: o }))} size="large" style={{ borderRadius: 8 }} />
           </Form.Item>
         )
       case 'number':
@@ -159,15 +160,9 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
     }
   }
 
-  const cardStyle = {
-    borderRadius: 14,
-    border: '1px solid #334155',
-    background: 'linear-gradient(135deg, #1e293b 0%, #1a2332 100%)',
-  }
-
   return (
     <Card style={cardStyle}>
-      <Title level={4} style={{ marginBottom: 24, color: '#f1f5f9', fontSize: 18 }}>
+      <Title level={4} style={{ marginBottom: 24, color: '#1e293b', fontSize: 18 }}>
         {operationType === 'create' ? '配置参数' : operationType === 'update' ? '修改参数' : '确认销毁'} — {schema.display_name}
       </Title>
 
@@ -175,10 +170,10 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
         <Alert
           type="info"
           icon={<EditOutlined />}
-          message={<span style={{ color: '#93c5fd' }}>修改已有资源配置</span>}
-          description={<span style={{ color: '#94a3b8', fontSize: 12 }}>正在修改资源: {targetResourceAddress || ''}。当前配置已自动加载，修改后重新生成。</span>}
+          message="修改已有资源配置"
+          description={`正在修改资源: ${targetResourceAddress || ''}。当前配置已自动加载，修改后重新生成。`}
           showIcon
-          style={{ marginBottom: 16, borderRadius: 8, background: '#1e3a5f', border: '1px solid #1e3a5f' }}
+          style={{ marginBottom: 16, borderRadius: 8, background: '#eff6ff', border: '1px solid #bfdbfe' }}
         />
       )}
 
@@ -192,16 +187,16 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
 
           <Card
             size="small"
-            title={<span style={{ fontSize: 13, fontWeight: 600, color: '#cbd5e1' }}>📝 自然语言描述（可选）</span>}
+            title={<span style={{ fontSize: 13, fontWeight: 600, color: '#475569' }}>📝 自然语言描述（可选）</span>}
             style={{
               marginTop: 16,
               marginBottom: 16,
               borderRadius: 8,
-              border: '1px solid #334155',
-              background: '#0f172a',
+              border: '1px solid #e2e8f0',
+              background: '#f8fafc',
             }}
           >
-            <Text style={{ display: 'block', marginBottom: 8, fontSize: 12, color: '#64748b' }}>
+            <Text style={{ display: 'block', marginBottom: 8, fontSize: 12, color: '#94a3b8' }}>
               除了表单参数外，还可以用自然语言描述更多需求，LLM 会结合两者生成更精准的配置。
             </Text>
             <TextArea
@@ -209,7 +204,7 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
               onChange={(e) => setUserDescription(e.target.value)}
               placeholder="例如：创建一个上海地域的OSS存储桶，存储类型为低频访问，开启版本控制"
               rows={3}
-              style={{ fontFamily: 'inherit', borderRadius: 6, background: '#1e293b', border: '1px solid #334155', color: '#e2e8f0' }}
+              style={{ fontFamily: 'inherit', borderRadius: 6, background: '#ffffff', border: '1px solid #e2e8f0', color: '#1e293b' }}
             />
           </Card>
 
@@ -220,7 +215,7 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
               icon={<ThunderboltOutlined />}
               onClick={operationType === 'update' ? handleUpdateGenerate : handleGenerate}
               loading={generating}
-              style={{ borderRadius: 8, minWidth: 160, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', border: 'none' }}
+              style={{ borderRadius: 8, minWidth: 160, background: 'linear-gradient(135deg, #2563eb, #6366f1)', border: 'none' }}
             >
               {operationType === 'update' ? '生成更新配置' : '生成 Terraform 配置'}
             </Button>
@@ -228,9 +223,9 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
 
           {generatedTf && (
             <Card
-              title={<span style={{ fontSize: 13, fontWeight: 600, color: '#cbd5e1' }}>生成的 Terraform 配置</span>}
+              title={<span style={{ fontSize: 13, fontWeight: 600, color: '#475569' }}>生成的 Terraform 配置</span>}
               size="small"
-              style={{ marginTop: 24, borderRadius: 8, border: '1px solid #334155', background: '#0f172a' }}
+              style={{ marginTop: 24, borderRadius: 8, border: '1px solid #e2e8f0', background: '#f8fafc' }}
             >
               <pre
                 style={{
@@ -241,17 +236,17 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
                   margin: 0,
                   whiteSpace: 'pre-wrap',
                   wordBreak: 'break-all',
-                  color: '#e2e8f0',
-                  background: '#1e293b',
+                  color: '#1e293b',
+                  background: '#f1f5f9',
                   padding: 12,
                   borderRadius: 6,
-                  border: '1px solid #334155',
+                  border: '1px solid #e2e8f0',
                 }}
               >
                 {generatedTf}
               </pre>
               <Space style={{ marginTop: 16 }}>
-                <Button type="primary" size="large" onClick={handleConfirm} style={{ borderRadius: 8, minWidth: 140, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', border: 'none' }}>
+                <Button type="primary" size="large" onClick={handleConfirm} style={{ borderRadius: 8, minWidth: 140, background: 'linear-gradient(135deg, #2563eb, #6366f1)', border: 'none' }}>
                   确认，下一步 Plan
                 </Button>
                 <Button onClick={() => setGeneratedTf(null)} style={{ borderRadius: 8 }}>
@@ -265,31 +260,31 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
         <div>
           <Alert
             type="warning"
-            message={<span style={{ color: '#fbbf24' }}>销毁操作不可逆</span>}
-            description={<span style={{ color: '#94a3b8', fontSize: 12 }}>即将销毁选中的资源，此操作无法撤销。请确保已备份重要数据。</span>}
+            message="销毁操作不可逆"
+            description="即将销毁选中的资源，此操作无法撤销。请确保已备份重要数据。"
             showIcon
-            style={{ marginBottom: 16, borderRadius: 8, background: '#1f1313', border: '1px solid #7f1d1d' }}
+            style={{ marginBottom: 16, borderRadius: 8, background: '#fef2f2', border: '1px solid #fecaca' }}
           />
 
-          <Text strong style={{ display: 'block', marginBottom: 8, fontSize: 13, color: '#94a3b8' }}>
+          <Text strong style={{ display: 'block', marginBottom: 8, fontSize: 13, color: '#64748b' }}>
             目标资源
           </Text>
-          <Text code style={{ fontSize: 13, padding: '4px 8px', borderRadius: 4, color: '#e2e8f0', background: '#1e293b', border: '1px solid #334155' }}>
+          <Text code style={{ fontSize: 13, padding: '4px 8px', borderRadius: 4, color: '#1e293b', background: '#f1f5f9', border: '1px solid #e2e8f0' }}>
             {targetResourceAddress || '未选择'}
           </Text>
 
           <Card
             size="small"
-            title={<span style={{ fontSize: 13, fontWeight: 600, color: '#fca5a5' }}>📝 自然语言描述（可选）</span>}
+            title={<span style={{ fontSize: 13, fontWeight: 600, color: '#dc2626' }}>📝 自然语言描述（可选）</span>}
             style={{
               marginTop: 16,
               marginBottom: 16,
               borderRadius: 8,
-              border: '1px solid #7f1d1d',
-              background: '#1f1313',
+              border: '1px solid #fecaca',
+              background: '#fef2f2',
             }}
           >
-            <Text style={{ display: 'block', marginBottom: 8, fontSize: 12, color: '#64748b' }}>
+            <Text style={{ display: 'block', marginBottom: 8, fontSize: 12, color: '#94a3b8' }}>
               可以用自然语言描述销毁的具体要求，LLM 会结合描述生成更精准的销毁配置。
             </Text>
             <TextArea
@@ -297,29 +292,21 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
               onChange={(e) => setUserDescription(e.target.value)}
               placeholder="例如：销毁时同时删除关联的OSS Bucket ACL配置"
               rows={3}
-              style={{ fontFamily: 'inherit', borderRadius: 6, background: '#1e293b', border: '1px solid #334155', color: '#e2e8f0' }}
+              style={{ fontFamily: 'inherit', borderRadius: 6, background: '#ffffff', border: '1px solid #e2e8f0', color: '#1e293b' }}
             />
           </Card>
 
           <Space>
-            <Button
-              type="primary"
-              danger
-              size="large"
-              icon={<ThunderboltOutlined />}
-              onClick={handleDestroyGenerate}
-              loading={generating}
-              style={{ borderRadius: 8, minWidth: 160 }}
-            >
+            <Button type="primary" danger size="large" icon={<ThunderboltOutlined />} onClick={handleDestroyGenerate} loading={generating} style={{ borderRadius: 8, minWidth: 160 }}>
               生成销毁配置
             </Button>
           </Space>
 
           {generatedTf && (
             <Card
-              title={<span style={{ fontSize: 13, fontWeight: 600, color: '#fca5a5' }}>生成的 Terraform 配置</span>}
+              title={<span style={{ fontSize: 13, fontWeight: 600, color: '#dc2626' }}>生成的 Terraform 配置</span>}
               size="small"
-              style={{ marginTop: 24, borderRadius: 8, border: '1px solid #7f1d1d', background: '#1f1313' }}
+              style={{ marginTop: 24, borderRadius: 8, border: '1px solid #fecaca', background: '#fef2f2' }}
             >
               <pre
                 style={{
@@ -330,11 +317,11 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
                   margin: 0,
                   whiteSpace: 'pre-wrap',
                   wordBreak: 'break-all',
-                  color: '#e2e8f0',
-                  background: '#1e293b',
+                  color: '#1e293b',
+                  background: '#f1f5f9',
                   padding: 12,
                   borderRadius: 6,
-                  border: '1px solid #334155',
+                  border: '1px solid #e2e8f0',
                 }}
               >
                 {generatedTf}
@@ -352,9 +339,9 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
 
           {!generatedTf && !generating && (
             <div style={{ marginTop: 24 }}>
-              <Card size="small" style={{ borderRadius: 8, border: '1px solid #1e3a5f', background: '#0f172a' }}>
-                <Text style={{ color: '#94a3b8', fontSize: 12 }}>
-                  资源不在当前 Terraform state 中，将直接使用 <code style={{ color: '#60a5fa' }}>-target={targetResourceAddress}</code> 执行 plan-destroy
+              <Card size="small" style={{ borderRadius: 8, border: '1px solid #bfdbfe', background: '#eff6ff' }}>
+                <Text style={{ color: '#64748b', fontSize: 12 }}>
+                  资源不在当前 Terraform state 中，将直接使用 <code style={{ color: '#2563eb' }}>-target={targetResourceAddress}</code> 执行 plan-destroy
                 </Text>
               </Card>
               <Space style={{ marginTop: 16 }}>

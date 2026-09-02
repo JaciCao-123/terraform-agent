@@ -30,8 +30,8 @@ const TerminalView: React.FC<Props> = ({
     <div
       ref={logRef}
       style={{
-        background: '#0d1117',
-        borderRadius: 8,
+        background: '#1a1a2e',
+        borderRadius: 10,
         padding: 16,
         fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace",
         fontSize: 13,
@@ -39,11 +39,11 @@ const TerminalView: React.FC<Props> = ({
         maxHeight,
         overflow: 'auto',
         minHeight: 120,
-        border: '1px solid #21262d',
+        border: '1px solid #16213e',
       }}
     >
       {logs.length === 0 && !loading && (
-        <Text style={{ color: '#484f58', fontStyle: 'italic' }}>
+        <Text style={{ color: '#64748b', fontStyle: 'italic' }}>
           $ {placeholder}
         </Text>
       )}
@@ -55,14 +55,14 @@ const TerminalView: React.FC<Props> = ({
         const isPlanAdd = /^  \+/i.test(line) || /^\+ /i.test(line)
         const isPlanRemove = /^- /i.test(line) || /^  -/i.test(line)
         const isPlanChange = /^~ /i.test(line) || /^  ~/i.test(line)
-        let color = '#c9d1d9'
-        if (isError) color = '#f85149'
-        else if (isWarning) color = '#d29922'
-        else if (isSuccess) color = '#3fb950'
-        else if (isHeading) color = '#58a6ff'
-        else if (isPlanAdd) color = '#3fb950'
-        else if (isPlanRemove) color = '#f85149'
-        else if (isPlanChange) color = '#d29922'
+        let color = '#e2e8f0'
+        if (isError) color = '#ef4444'
+        else if (isWarning) color = '#f59e0b'
+        else if (isSuccess) color = '#22c55e'
+        else if (isHeading) color = '#60a5fa'
+        else if (isPlanAdd) color = '#22c55e'
+        else if (isPlanRemove) color = '#ef4444'
+        else if (isPlanChange) color = '#f59e0b'
         return (
           <div
             key={i}
@@ -77,7 +77,7 @@ const TerminalView: React.FC<Props> = ({
         )
       })}
       {loading && (
-        <div style={{ color: '#58a6ff', marginTop: 4 }}>
+        <div style={{ color: '#60a5fa', marginTop: 4 }}>
           <Spin size="small" style={{ marginRight: 8 }} />
           {loadingText}
         </div>

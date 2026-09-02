@@ -18,8 +18,8 @@ interface Props {
 
 const cardStyle = {
   borderRadius: 14,
-  border: '1px solid #334155',
-  background: 'linear-gradient(135deg, #1e293b 0%, #1a2332 100%)',
+  border: '1px solid #e2e8f0',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
 }
 
 const CodeReview: React.FC<Props> = ({
@@ -68,14 +68,14 @@ const CodeReview: React.FC<Props> = ({
 
   return (
     <Card style={cardStyle}>
-      <Title level={4} style={{ marginBottom: 24, color: '#f1f5f9', fontSize: 18 }}>
+      <Title level={4} style={{ marginBottom: 24, color: '#1e293b', fontSize: 18 }}>
         {operationType === 'destroy' ? '审查 Terraform Destroy Plan' : '审查 Terraform Plan'}
       </Title>
 
       <Card
-        title={<span style={{ fontSize: 13, fontWeight: 600, color: '#cbd5e1' }}>生成的 Terraform 配置</span>}
+        title={<span style={{ fontSize: 13, fontWeight: 600, color: '#475569' }}>生成的 Terraform 配置</span>}
         size="small"
-        style={{ marginBottom: 16, borderRadius: 8, border: '1px solid #334155', background: '#0f172a' }}
+        style={{ marginBottom: 16, borderRadius: 8, border: '1px solid #e2e8f0', background: '#f8fafc' }}
       >
         <pre
           style={{
@@ -86,7 +86,7 @@ const CodeReview: React.FC<Props> = ({
             margin: 0,
             whiteSpace: 'pre-wrap',
             wordBreak: 'break-all',
-            color: '#e2e8f0',
+            color: '#1e293b',
           }}
         >
           {tfContent || '# 销毁模式：使用已有资源状态'}
@@ -94,7 +94,7 @@ const CodeReview: React.FC<Props> = ({
       </Card>
 
       <div style={{ marginBottom: 8 }}>
-        <Text strong style={{ fontSize: 13, color: '#94a3b8' }}>
+        <Text strong style={{ fontSize: 13, color: '#64748b' }}>
           Terraform Plan 输出
         </Text>
       </div>
@@ -108,9 +108,9 @@ const CodeReview: React.FC<Props> = ({
       {planDone && (
         <Alert
           type="success"
-          message={<span style={{ color: '#86efac' }}>Plan 执行完成，请确认后继续</span>}
+          message="Plan 执行完成，请确认后继续"
           showIcon
-          style={{ marginTop: 16, borderRadius: 8, background: '#022c22', border: '1px solid #065f46' }}
+          style={{ marginTop: 16, borderRadius: 8, background: '#f0fdf4', border: '1px solid #bbf7d0' }}
         />
       )}
 
@@ -121,7 +121,7 @@ const CodeReview: React.FC<Props> = ({
             size="large"
             onClick={startPlan}
             loading={planning}
-            style={{ borderRadius: 8, minWidth: 140, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', border: 'none' }}
+            style={{ borderRadius: 8, minWidth: 140, background: 'linear-gradient(135deg, #2563eb, #6366f1)', border: 'none' }}
           >
             执行 Plan
           </Button>
@@ -130,7 +130,7 @@ const CodeReview: React.FC<Props> = ({
             type="primary"
             size="large"
             onClick={handleConfirm}
-            style={{ borderRadius: 8, minWidth: 140, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', border: 'none' }}
+            style={{ borderRadius: 8, minWidth: 140, background: 'linear-gradient(135deg, #2563eb, #6366f1)', border: 'none' }}
           >
             确认，下一步
           </Button>

@@ -133,20 +133,20 @@ const App: React.FC = () => {
   return (
     <ConfigProvider
       theme={{
-        algorithm: theme.darkAlgorithm,
+        algorithm: theme.defaultAlgorithm,
         token: {
-          colorPrimary: '#6366f1',
+          colorPrimary: '#2563eb',
           borderRadius: 10,
-          colorBgContainer: '#1e293b',
-          colorBgElevated: '#1e293b',
-          colorBgLayout: '#0f172a',
-          colorText: '#e2e8f0',
-          colorTextSecondary: '#94a3b8',
-          colorBorder: '#334155',
+          colorBgContainer: '#ffffff',
+          colorBgElevated: '#ffffff',
+          colorBgLayout: '#f8fafc',
+          colorText: '#1e293b',
+          colorTextSecondary: '#64748b',
+          colorBorder: '#e2e8f0',
         },
       }}
     >
-      <Layout style={{ minHeight: '100vh', background: '#0f172a' }}>
+      <Layout style={{ minHeight: '100vh', background: '#f8fafc' }}>
         <Header
           style={{
             background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)',
@@ -155,7 +155,7 @@ const App: React.FC = () => {
             alignItems: 'center',
             height: 64,
             cursor: 'pointer',
-            borderBottom: '1px solid #1e293b',
+            borderBottom: '1px solid #e2e8f0',
             position: 'sticky',
             top: 0,
             zIndex: 100,
@@ -168,31 +168,32 @@ const App: React.FC = () => {
               width: 36,
               height: 36,
               borderRadius: 10,
-              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+              background: 'linear-gradient(135deg, #2563eb, #6366f1)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               marginRight: 12,
-              boxShadow: '0 4px 12px rgba(99,102,241,0.4)',
+              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.4)',
             }}
           >
-            <CloudServerOutlined style={{ fontSize: 18, color: '#fff' }} />
+            <CloudServerOutlined style={{ fontSize: 18, color: '#ffffff' }} />
           </div>
           <div>
             <Title level={4} style={{ margin: 0, color: '#f1f5f9', fontSize: 18, letterSpacing: 0.5, fontWeight: 700 }}>
               Terraform Agent
             </Title>
-            <div style={{ fontSize: 11, color: '#6366f1', marginTop: -2 }}>云资源管理平台</div>
+            <div style={{ fontSize: 11, color: '#93c5fd', marginTop: -2 }}>云资源管理平台</div>
           </div>
         </Header>
         <Content style={{ padding: '24px', maxWidth: 900, margin: '0 auto', width: '100%' }}>
           <div
             style={{
-              background: 'linear-gradient(135deg, #1e293b 0%, #1a2332 100%)',
+              background: '#ffffff',
               borderRadius: 14,
               padding: '16px 24px',
               marginBottom: 24,
-              border: '1px solid #334155',
+              border: '1px solid #e2e8f0',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
             }}
           >
             <Steps
@@ -261,21 +262,22 @@ const App: React.FC = () => {
           {currentStep === 4 && (
             <div
               style={{
-                background: 'linear-gradient(135deg, #1e293b 0%, #1a2332 100%)',
+                background: '#ffffff',
                 borderRadius: 14,
                 padding: 32,
-                border: '1px solid #334155',
+                border: '1px solid #e2e8f0',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
               }}
             >
               <Result
                 status={executionStatus === 'error' ? 'error' : 'success'}
                 title={
-                  <span style={{ fontSize: 20, color: '#f1f5f9' }}>
+                  <span style={{ fontSize: 20, color: '#1e293b' }}>
                     {operationType === 'create' ? '资源创建完成' : operationType === 'update' ? '资源更新完成' : '资源销毁完成'}
                   </span>
                 }
                 subTitle={
-                  <span style={{ color: '#94a3b8' }}>
+                  <span style={{ color: '#64748b' }}>
                     {executionStatus === 'success' ? 'Terraform 配置已成功执行。' : '执行过程中出现错误，请查看日志。'}
                   </span>
                 }
@@ -285,14 +287,14 @@ const App: React.FC = () => {
                     icon={<ReloadOutlined />}
                     onClick={handleReset}
                     size="large"
-                    style={{ borderRadius: 8, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', border: 'none' }}
+                    style={{ borderRadius: 8, background: 'linear-gradient(135deg, #2563eb, #6366f1)', border: 'none' }}
                   >
                     重新开始
                   </Button>
                 }
               />
               <div style={{ marginTop: 16 }}>
-                <div style={{ marginBottom: 8, fontSize: 13, color: '#94a3b8', fontWeight: 600, letterSpacing: 0.5 }}>
+                <div style={{ marginBottom: 8, fontSize: 13, color: '#64748b', fontWeight: 600, letterSpacing: 0.5 }}>
                   执行日志
                 </div>
                 <TerminalView logs={executionLogs} maxHeight={300} placeholder="暂无日志" />
