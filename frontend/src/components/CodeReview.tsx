@@ -38,7 +38,7 @@ const CodeReview: React.FC<Props> = ({
 
   const handleMessage = useCallback((msg: SSEMessage) => {
     if (msg.log) {
-      setPlanLogs((prev) => [...prev, msg.log])
+      setPlanLogs((prev) => [...prev, msg.log!])
     }
   }, [])
 
