@@ -62,11 +62,12 @@ def build_terraform_generation_prompt(
         "要求：\n"
         "1. 只输出纯 HCL 代码，不要包含任何解释、markdown 标记或代码块包围\n"
         "2. 代码必须符合 Terraform 语法，使用阿里云 Provider alicloud\n"
-        "3. 只包含 resource 定义，不包含 provider 配置和 backend 配置\n"
+        "3. 只包含 resource 定义和必要的 output 输出，不包含 provider 配置和 backend 配置\n"
         "4. 使用 alicloud_ 前缀的资源类型\n"
         "5. 参数值必须严格使用用户提供的值，不要自行修改或添加默认值\n"
         "6. 不要添加任何注释行\n"
-        "7. 表单参数优先于自然语言描述，如果两者冲突以表单参数为准\n"
+        "7. 如果需要输出重要属性（如公网 IP、Endpoint URL 等），可以添加 output 块\n"
+        "8. 表单参数优先于自然语言描述，如果两者冲突以表单参数为准\n"
         f"{extra_rules}"
     )
 
