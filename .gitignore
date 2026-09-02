@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Node
+node_modules/
+dist/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+
+# Environment
+.env
+backend/.env
+
+# Terraform
+*.tfstate
+*.tfstate.backup
+.terraform/
+tfplan*
+
+# Logs
+logs/
+backend/logs/

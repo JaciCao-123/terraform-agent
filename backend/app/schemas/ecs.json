@@ -1,0 +1,93 @@
+{
+  "resource_type": "ecs",
+  "terraform_resource": "alicloud_instance",
+  "display_name": "云服务器 ECS",
+  "description": "弹性云服务器，提供可伸缩的计算能力",
+  "core_params": [
+    {
+      "name": "instance_name",
+      "label": "实例名称",
+      "type": "string",
+      "required": true,
+      "default": "my-instance",
+      "description": "ECS 实例名称，2-128 个字符"
+    },
+    {
+      "name": "instance_type",
+      "label": "实例规格",
+      "type": "select",
+      "required": true,
+      "default": "ecs.g6.large",
+      "options": [
+        "ecs.g6.large",
+        "ecs.g6.xlarge",
+        "ecs.g6.2xlarge",
+        "ecs.g7.large",
+        "ecs.g7.xlarge",
+        "ecs.c6.large",
+        "ecs.c6.xlarge"
+      ],
+      "description": "选择实例规格，影响 CPU 和内存"
+    },
+    {
+      "name": "image_id",
+      "label": "镜像",
+      "type": "select",
+      "required": true,
+      "default": "aliyun_2_1903_x64_20G_alibase_2024",
+      "options": [
+        "aliyun_2_1903_x64_20G_alibase_2024",
+        "centos_7_9_x64_20G_alibase_2024",
+        "ubuntu_22_04_x64_20G_alibase_2024",
+        "win2022_zh-cn_40G_alibase_2024"
+      ],
+      "description": "操作系统镜像"
+    },
+    {
+      "name": "system_disk_size",
+      "label": "系统盘大小 (GB)",
+      "type": "number",
+      "required": false,
+      "default": 40,
+      "min": 20,
+      "max": 500,
+      "description": "系统盘大小，单位 GB"
+    },
+    {
+      "name": "internet_charge_type",
+      "label": "网络计费方式",
+      "type": "select",
+      "required": false,
+      "default": "PayByTraffic",
+      "options": ["PayByTraffic", "PayByBandwidth"],
+      "description": "公网带宽计费方式"
+    },
+    {
+      "name": "internet_max_bandwidth_out",
+      "label": "公网最大带宽 (Mbps)",
+      "type": "number",
+      "required": false,
+      "default": 1,
+      "min": 0,
+      "max": 100,
+      "description": "公网出带宽最大值"
+    },
+    {
+      "name": "password",
+      "label": "登录密码",
+      "type": "password",
+      "required": false,
+      "description": "实例登录密码，8-30 个字符，包含大写字母、小写字母、数字和特殊字符中的三种"
+    },
+    {
+      "name": "count",
+      "label": "购买数量",
+      "type": "number",
+      "required": false,
+      "default": 1,
+      "min": 1,
+      "max": 10,
+      "description": "一次性创建的实例数量"
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "resource_type": "rds",
+  "terraform_resource": "alicloud_db_instance",
+  "display_name": "云数据库 RDS",
+  "description": "关系型数据库服务，支持 MySQL、PostgreSQL、SQL Server",
+  "core_params": [
+    {
+      "name": "instance_name",
+      "label": "实例名称",
+      "type": "string",
+      "required": true,
+      "default": "my-rds-instance",
+      "description": "RDS 实例名称"
+    },
+    {
+      "name": "engine",
+      "label": "数据库引擎",
+      "type": "select",
+      "required": true,
+      "default": "MySQL",
+      "options": ["MySQL", "PostgreSQL", "SQLServer", "MariaDB"],
+      "description": "数据库引擎类型"
+    },
+    {
+      "name": "engine_version",
+      "label": "引擎版本",
+      "type": "select",
+      "required": true,
+      "default": "8.0",
+      "options": ["5.6", "5.7", "8.0"],
+      "description": "数据库引擎版本号，根据引擎不同可选版本不同"
+    },
+    {
+      "name": "instance_type",
+      "label": "实例规格",
+      "type": "select",
+      "required": true,
+      "default": "rds.mysql.t3.small",
+      "options": [
+        "rds.mysql.t3.small",
+        "rds.mysql.t3.medium",
+        "rds.mysql.t3.large",
+        "rds.mysql.c1.large",
+        "rds.mysql.c1.xlarge"
+      ],
+      "description": "RDS 实例规格"
+    },
+    {
+      "name": "db_instance_storage",
+      "label": "存储空间 (GB)",
+      "type": "number",
+      "required": true,
+      "default": 20,
+      "min": 20,
+      "max": 3000,
+      "description": "实例存储空间"
+    },
+    {
+      "name": "account_name",
+      "label": "数据库账号",
+      "type": "string",
+      "required": false,
+      "default": "db_user",
+      "description": "初始数据库账号名"
+    },
+    {
+      "name": "account_password",
+      "label": "数据库密码",
+      "type": "password",
+      "required": false,
+      "description": "初始数据库密码"
+    }
+  ]
+}

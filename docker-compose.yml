@@ -1,0 +1,39 @@
+version: "3.8"
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - LLM_PROVIDER=${LLM_PROVIDER:-tongyi}
+      - TONGYI_API_KEY=${TONGYI_API_KEY}
+      - VLLM_ENDPOINT=${VLLM_ENDPOINT:-}
+      - VLLM_MODEL_NAME=${VLLM_MODEL_NAME:-}
+      - ALICLOUD_ACCESS_KEY=${ALICLOUD_ACCESS_KEY}
+      - ALICLOUD_SECRET_KEY=${ALICLOUD_SECRET_KEY}
+      - ALICLOUD_REGION=${ALICLOUD_REGION:-cn-hangzhou}
+      - OSS_BUCKET=${OSS_BUCKET:-terraform-agent-state}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - backend_data:/tmp/terraform-agent
+    restart: unless-stopped
+    networks:
+      - agent-net
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - agent-net
+
+volumes:
+  backend_data:
+
+networks:
+  agent-net:
+    driver: bridge

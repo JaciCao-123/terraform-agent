@@ -1,0 +1,50 @@
+{
+  "resource_type": "slb",
+  "terraform_resource": "alicloud_slb_load_balancer",
+  "display_name": "负载均衡 SLB",
+  "description": "Server Load Balancer，分发流量到多台后端服务器",
+  "core_params": [
+    {
+      "name": "load_balancer_name",
+      "label": "实例名称",
+      "type": "string",
+      "required": true,
+      "default": "my-slb-instance",
+      "description": "SLB 实例名称"
+    },
+    {
+      "name": "address_type",
+      "label": "网络类型",
+      "type": "select",
+      "required": true,
+      "default": "internet",
+      "options": ["internet", "intranet"],
+      "description": "SLB 网络类型，internet 表示公网，intranet 表示私网"
+    },
+    {
+      "name": "load_balancer_spec",
+      "label": "实例规格",
+      "type": "select",
+      "required": false,
+      "default": "slb.s1.small",
+      "options": [
+        "slb.s1.small",
+        "slb.s2.small",
+        "slb.s2.medium",
+        "slb.s3.large",
+        "slb.s3.xlarge"
+      ],
+      "description": "SLB 实例规格"
+    },
+    {
+      "name": "bandwidth",
+      "label": "带宽 (Mbps)",
+      "type": "number",
+      "required": false,
+      "default": 1,
+      "min": 1,
+      "max": 1000,
+      "description": "公网 SLB 的带宽峰值"
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "resource_type": "oss",
+  "terraform_resource": "alicloud_oss_bucket",
+  "display_name": "对象存储 OSS",
+  "description": "Object Storage Service，海量、安全、低成本的云存储服务",
+  "core_params": [
+    {
+      "name": "bucket",
+      "label": "Bucket 名称",
+      "type": "string",
+      "required": true,
+      "pattern": "^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$",
+      "description": "Bucket 全局唯一名称，3-63 个字符，只能包含小写字母、数字和短横线 (-)，不能以短横线开头或结尾"
+    },
+    {
+      "name": "acl",
+      "label": "访问权限",
+      "type": "select",
+      "required": true,
+      "default": "private",
+      "options": ["private", "public-read", "public-read-write"],
+      "description": "Bucket 的访问权限控制"
+    },
+    {
+      "name": "storage_class",
+      "label": "存储类型",
+      "type": "select",
+      "required": false,
+      "default": "Standard",
+      "options": ["Standard", "IA", "Archive", "ColdArchive"],
+      "description": "对象存储类型"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+# Terraform Agent 配置
+# 优先级: 环境变量 > 此文件 > 默认值
+# 敏感信息（凭据）请放在 .env 文件中
+
+# LLM 配置
+llm_provider: "tongyi"  # "tongyi" | "vllm"
+# vllm_endpoint: "http://localhost:8000/v1"
+# vllm_model_name: "Qwen2.5-14B-Instruct"
+
+# Terraform 配置
+terraform_image: "hashicorp/terraform:latest"
+terraform_work_dir: "/tmp/terraform-agent"
+
+# 阿里云配置
+alicloud_region: "cn-hangzhou"
+
+# OSS 后端配置
+oss_bucket: "terraform-agent-state"
+oss_state_prefix: "terraform/state/"
+oss_log_prefix: "terraform/logs/"
