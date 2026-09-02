@@ -173,7 +173,7 @@ const App: React.FC = () => {
             Terraform Agent - 云资源管理
           </Title>
         </Header>
-        <Content style={{ padding: '32px 48px', maxWidth: 960, margin: '0 auto' }}>
+        <Content style={{ padding: '24px 24px', maxWidth: 860, margin: '0 auto' }}>
           <Steps
             current={currentStep}
             style={{ marginBottom: 32, background: '#fff', padding: '20px 32px', borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}
