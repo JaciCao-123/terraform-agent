@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Card, Select, Button, Space, Typography, Spin, Empty, Descriptions, Tag, message } from 'antd'
-import { PlusCircleOutlined, DeleteOutlined, ReloadOutlined, EditOutlined, CloudServerOutlined, DatabaseOutlined, NodeIndexOutlined, FolderOpenOutlined } from '@ant-design/icons'
+import { PlusCircleOutlined, DeleteOutlined, ReloadOutlined, EditOutlined, CloudServerOutlined, DatabaseOutlined, NodeIndexOutlined, FolderOpenOutlined, ApartmentOutlined, ThunderboltOutlined, DeploymentUnitOutlined, FileOutlined } from '@ant-design/icons'
 import { getResourceTypes, getResourceSchema, getResourceInstances } from '../services/api'
 import type { OperationType, ResourceType, ResourceSchema, ResourceInstance } from '../types'
 
@@ -11,6 +11,11 @@ const RESOURCE_ICONS: Record<string, React.ReactNode> = {
   rds: <DatabaseOutlined style={{ fontSize: 28, color: '#7c3aed' }} />,
   slb: <NodeIndexOutlined style={{ fontSize: 28, color: '#059669' }} />,
   oss: <FolderOpenOutlined style={{ fontSize: 28, color: '#d97706' }} />,
+  vpc: <ApartmentOutlined style={{ fontSize: 28, color: '#0891b2' }} />,
+  redis: <ThunderboltOutlined style={{ fontSize: 28, color: '#dc2626' }} />,
+  ack: <DeploymentUnitOutlined style={{ fontSize: 28, color: '#10b981' }} />,
+  cdn: <FileOutlined style={{ fontSize: 28, color: '#8b5cf6' }} />,
+  nas: <FolderOpenOutlined style={{ fontSize: 28, color: '#f59e0b' }} />,
 }
 
 const RESOURCE_CARD_COLORS: Record<string, { bg: string; border: string; selectedBg: string; selectedBorder: string }> = {
@@ -18,6 +23,11 @@ const RESOURCE_CARD_COLORS: Record<string, { bg: string; border: string; selecte
   rds: { bg: '#f5f3ff', border: '#ddd6fe', selectedBg: '#ede9fe', selectedBorder: '#7c3aed' },
   slb: { bg: '#ecfdf5', border: '#a7f3d0', selectedBg: '#d1fae5', selectedBorder: '#059669' },
   oss: { bg: '#fffbeb', border: '#fde68a', selectedBg: '#fef3c7', selectedBorder: '#d97706' },
+  vpc: { bg: '#ecfeff', border: '#a5f3fc', selectedBg: '#cffafe', selectedBorder: '#0891b2' },
+  redis: { bg: '#fef2f2', border: '#fecaca', selectedBg: '#fee2e2', selectedBorder: '#dc2626' },
+  ack: { bg: '#f0fdf4', border: '#bbf7d0', selectedBg: '#dcfce7', selectedBorder: '#10b981' },
+  cdn: { bg: '#f5f3ff', border: '#ddd6fe', selectedBg: '#ede9fe', selectedBorder: '#8b5cf6' },
+  nas: { bg: '#fffbeb', border: '#fde68a', selectedBg: '#fef3c7', selectedBorder: '#f59e0b' },
 }
 
 const RESOURCE_TYPE_LABELS: Record<string, string> = {
@@ -25,6 +35,11 @@ const RESOURCE_TYPE_LABELS: Record<string, string> = {
   rds: '云数据库 RDS',
   slb: '负载均衡 SLB',
   oss: '对象存储 OSS',
+  vpc: '专有网络 VPC',
+  redis: '云数据库 Redis',
+  ack: '容器服务 ACK',
+  cdn: '内容分发 CDN',
+  nas: '文件存储 NAS',
 }
 
 interface Props {

@@ -237,4 +237,19 @@ class StateManager:
         elif res_type == "alicloud_oss_bucket":
             detail["storage_class"] = values.get("storage_class", "")
             detail["creation_date"] = values.get("creation_date", "")
+        elif res_type == "alicloud_vpc":
+            detail["cidr_block"] = values.get("cidr_block", "")
+            detail["vpc_name"] = values.get("vpc_name", "")
+        elif res_type == "alicloud_kvstore_instance":
+            detail["instance_class"] = values.get("instance_class", "")
+            detail["engine_version"] = values.get("engine_version", "")
+        elif res_type == "alicloud_cs_managed_kubernetes":
+            detail["worker_number"] = values.get("worker_number", "")
+            detail["cluster_type"] = values.get("cluster_type", "")
+        elif res_type == "alicloud_cdn_domain":
+            detail["cdn_type"] = values.get("cdn_type", "")
+            detail["cname"] = values.get("cname", "")
+        elif res_type == "alicloud_nas_file_system":
+            detail["file_system_type"] = values.get("file_system_type", "")
+            detail["protocol_type"] = values.get("protocol_type", "")
         return detail

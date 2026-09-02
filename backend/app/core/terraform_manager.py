@@ -25,6 +25,11 @@ class TerraformManager:
         "rds": "alicloud_db_instance",
         "slb": "alicloud_slb",
         "oss": "alicloud_oss_bucket",
+        "vpc": "alicloud_vpc",
+        "redis": "alicloud_kvstore_instance",
+        "ack": "alicloud_cs_managed_kubernetes",
+        "cdn": "alicloud_cdn_domain",
+        "nas": "alicloud_nas_file_system",
     }
 
     def __init__(self):

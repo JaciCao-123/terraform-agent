@@ -1,0 +1,40 @@
+{
+  "resource_type": "cdn",
+  "terraform_resource": "alicloud_cdn_domain",
+  "display_name": "内容分发 CDN",
+  "description": "阿里云内容分发网络 CDN，加速网站和静态资源访问",
+  "core_params": [
+    {
+      "name": "domain_name",
+      "label": "加速域名",
+      "type": "string",
+      "required": true,
+      "description": "需要加速的域名，如 example.com"
+    },
+    {
+      "name": "cdn_type",
+      "label": "业务类型",
+      "type": "select",
+      "required": true,
+      "default": "web",
+      "options": ["web", "download", "video"],
+      "description": "CDN 业务类型"
+    },
+    {
+      "name": "sources",
+      "label": "源站地址",
+      "type": "string",
+      "required": true,
+      "description": "源站地址或域名，多个用逗号分隔"
+    },
+    {
+      "name": "source_type",
+      "label": "源站类型",
+      "type": "select",
+      "required": true,
+      "default": "domain",
+      "options": ["domain", "oss", "ip"],
+      "description": "源站类型"
+    }
+  ]
+}

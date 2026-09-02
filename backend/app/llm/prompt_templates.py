@@ -67,6 +67,59 @@ resource "alicloud_slb_load_balancer" "this" {
 output "slb_address" {
   value = alicloud_slb_load_balancer.this.address
 }""",
+    "vpc": """## 示例：创建专有网络 VPC
+
+resource "alicloud_vpc" "this" {
+  vpc_name   = "my-vpc"
+  cidr_block = "172.16.0.0/12"
+}
+
+output "vpc_id" {
+  value = alicloud_vpc.this.id
+}""",
+    "redis": """## 示例：创建 Redis 实例
+
+resource "alicloud_kvstore_instance" "this" {
+  instance_name  = "my-redis-cache"
+  instance_class = "redis.master.small.default"
+  engine_version = "5.0"
+  instance_type  = "Redis"
+}
+
+output "redis_connection_domain" {
+  value = alicloud_kvstore_instance.this.connection_domain
+}""",
+    "ack": """## 示例：创建 ACK 集群
+
+resource "alicloud_cs_managed_kubernetes" "this" {
+  name                 = "my-ack-cluster"
+  worker_number        = 2
+  worker_instance_type = "ecs.g7.xlarge"
+  worker_vswitch_ids   = ["vsw-xxx"]
+}""",
+    "cdn": """## 示例：创建 CDN 加速域名
+
+resource "alicloud_cdn_domain" "this" {
+  domain_name = "cdn.example.com"
+  cdn_type    = "web"
+  sources     = "origin.example.com"
+  source_type = "domain"
+}
+
+output "cdn_cname" {
+  value = alicloud_cdn_domain.this.cname
+}""",
+    "nas": """## 示例：创建文件存储 NAS
+
+resource "alicloud_nas_file_system" "this" {
+  file_system_type = "standard"
+  storage_type     = "Performance"
+  protocol_type    = "NFS"
+}
+
+output "nas_id" {
+  value = alicloud_nas_file_system.this.id
+}""",
 }
 
 # 销毁操作的 few-shot 示例

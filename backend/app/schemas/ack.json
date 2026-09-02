@@ -1,0 +1,40 @@
+{
+  "resource_type": "ack",
+  "terraform_resource": "alicloud_cs_managed_kubernetes",
+  "display_name": "容器服务 ACK",
+  "description": "阿里云容器服务 Kubernetes 版，托管式容器集群",
+  "core_params": [
+    {
+      "name": "name",
+      "label": "集群名称",
+      "type": "string",
+      "required": true,
+      "description": "ACK 集群的名称"
+    },
+    {
+      "name": "worker_number",
+      "label": "Worker 节点数",
+      "type": "number",
+      "required": true,
+      "default": 2,
+      "min": 1,
+      "max": 100,
+      "description": "Worker 节点数量"
+    },
+    {
+      "name": "worker_instance_type",
+      "label": "Worker 实例规格",
+      "type": "string",
+      "required": true,
+      "default": "ecs.g7.xlarge",
+      "description": "Worker 节点 ECS 实例规格"
+    },
+    {
+      "name": "worker_vswitch_ids",
+      "label": "Worker VSwitch ID",
+      "type": "string",
+      "required": true,
+      "description": "Worker 节点所在 VSwitch 的 ID"
+    }
+  ]
+}

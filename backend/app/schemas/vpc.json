@@ -1,0 +1,30 @@
+{
+  "resource_type": "vpc",
+  "terraform_resource": "alicloud_vpc",
+  "display_name": "专有网络 VPC",
+  "description": "专有网络（VPC）是用户自定义的隔离网络空间，可在其中部署云资源",
+  "core_params": [
+    {
+      "name": "vpc_name",
+      "label": "VPC 名称",
+      "type": "string",
+      "required": true,
+      "description": "VPC 实例的名称"
+    },
+    {
+      "name": "cidr_block",
+      "label": "CIDR 网段",
+      "type": "string",
+      "required": true,
+      "default": "172.16.0.0/12",
+      "description": "VPC 的网段，如 172.16.0.0/12"
+    },
+    {
+      "name": "description",
+      "label": "描述",
+      "type": "string",
+      "required": false,
+      "description": "VPC 的描述信息"
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "resource_type": "nas",
+  "terraform_resource": "alicloud_nas_file_system",
+  "display_name": "文件存储 NAS",
+  "description": "阿里云文件存储 NAS，提供高性能、高可用的共享文件存储服务",
+  "core_params": [
+    {
+      "name": "file_system_type",
+      "label": "文件系统类型",
+      "type": "select",
+      "required": true,
+      "default": "standard",
+      "options": ["standard", "extreme", "cpfs"],
+      "description": "NAS 文件系统类型"
+    },
+    {
+      "name": "storage_type",
+      "label": "存储类型",
+      "type": "select",
+      "required": true,
+      "default": "Performance",
+      "options": ["Performance", "Capacity"],
+      "description": "存储性能类型"
+    },
+    {
+      "name": "protocol_type",
+      "label": "协议类型",
+      "type": "select",
+      "required": true,
+      "default": "NFS",
+      "options": ["NFS", "SMB"],
+      "description": "文件共享协议类型"
+    },
+    {
+      "name": "description",
+      "label": "描述",
+      "type": "string",
+      "required": false,
+      "description": "文件系统的描述信息"
+    }
+  ]
+}

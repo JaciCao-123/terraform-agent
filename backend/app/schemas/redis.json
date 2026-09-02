@@ -1,0 +1,46 @@
+{
+  "resource_type": "redis",
+  "terraform_resource": "alicloud_kvstore_instance",
+  "display_name": "云数据库 Redis",
+  "description": "阿里云 Redis 缓存数据库服务，支持主从、集群模式",
+  "core_params": [
+    {
+      "name": "instance_name",
+      "label": "实例名称",
+      "type": "string",
+      "required": true,
+      "description": "Redis 实例的名称"
+    },
+    {
+      "name": "instance_class",
+      "label": "实例规格",
+      "type": "select",
+      "required": true,
+      "default": "redis.master.small.default",
+      "options": [
+        "redis.master.small.default",
+        "redis.master.mid.default",
+        "redis.master.large.default"
+      ],
+      "description": "Redis 实例规格"
+    },
+    {
+      "name": "engine_version",
+      "label": "引擎版本",
+      "type": "select",
+      "required": true,
+      "default": "5.0",
+      "options": ["4.0", "5.0", "6.0", "7.0"],
+      "description": "Redis 引擎版本"
+    },
+    {
+      "name": "instance_type",
+      "label": "实例类型",
+      "type": "select",
+      "required": true,
+      "default": "Redis",
+      "options": ["Redis", "Memcache"],
+      "description": "缓存引擎类型"
+    }
+  ]
+}
