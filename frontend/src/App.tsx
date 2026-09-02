@@ -1,11 +1,12 @@
 import React, { useState, useCallback } from 'react'
-import { Layout, Typography, Steps, message } from 'antd'
-import { CloudServerOutlined } from '@ant-design/icons'
+import { Layout, Typography, Steps, message, ConfigProvider, theme, Button, Result } from 'antd'
+import { CloudServerOutlined, ReloadOutlined } from '@ant-design/icons'
 import ResourceSelector from './components/ResourceSelector'
 import ConfigDialog from './components/ConfigDialog'
 import CodeReview from './components/CodeReview'
 import ExecutionPanel from './components/ExecutionPanel'
-import type { OperationType, ResourceSchema, SSEMessage } from './types'
+import TerminalView from './components/TerminalView'
+import type { OperationType, ResourceSchema } from './types'
 
 const { Header, Content } = Layout
 const { Title } = Typography
@@ -110,6 +111,7 @@ const App: React.FC = () => {
   const handleReset = useCallback(() => {
     setCurrentStep(0)
     setStepStatus(['process', 'wait', 'wait', 'wait', 'wait'])
+    setOperationType('create')
     setResourceType(null)
     setResourceSchema(null)
     setTfContent('')
@@ -117,142 +119,171 @@ const App: React.FC = () => {
     setExecutionLogs([])
     setExecutionStatus('idle')
     setTargetResourceAddress('')
+    setTargetResourceId('')
   }, [])
 
+  const stepItems = [
+    { title: '选择资源', status: stepStatus[0] },
+    ...(operationType === 'destroy'
+      ? [
+          { title: '确认销毁', status: stepStatus[1] },
+          { title: '审查 Plan', status: stepStatus[2] },
+          { title: '执行 Destroy', status: stepStatus[3] },
+        ]
+      : operationType === 'update'
+      ? [
+          { title: '修改参数', status: stepStatus[1] },
+          { title: '审查 Plan', status: stepStatus[2] },
+          { title: '执行 Apply', status: stepStatus[3] },
+        ]
+      : [
+          { title: '配置参数', status: stepStatus[1] },
+          { title: '审查 Plan', status: stepStatus[2] },
+          { title: '执行 Apply', status: stepStatus[3] },
+        ]
+    ),
+    { title: '查看结果', status: stepStatus[4] },
+  ]
+
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Header
-        style={{
-          background: '#fff',
-          padding: '0 24px',
-          display: 'flex',
-          alignItems: 'center',
-          borderBottom: '1px solid #f0f0f0',
-          cursor: 'pointer',
-        }}
-        onClick={handleReset}
-      >
-        <CloudServerOutlined style={{ fontSize: 24, color: '#1677ff', marginRight: 12 }} />
-        <Title level={4} style={{ margin: 0 }}>
-          Terraform Agent - 云资源管理
-        </Title>
-      </Header>
-      <Content style={{ padding: '24px 48px' }}>
-        <Steps
-          current={currentStep}
-          style={{ marginBottom: 32 }}
-          items={[
-            { title: '选择资源', status: stepStatus[0] },
-            ...(operationType === 'destroy'
-              ? [
-                  { title: '确认销毁', status: stepStatus[1] },
-                  { title: '审查 Plan Destroy', status: stepStatus[2] },
-                  { title: '执行 Destroy', status: stepStatus[3] },
-                ]
-              : operationType === 'update'
-              ? [
-                  { title: '修改参数', status: stepStatus[1] },
-                  { title: '审查 Plan', status: stepStatus[2] },
-                  { title: '执行 Apply', status: stepStatus[3] },
-                ]
-              : [
-                  { title: '配置参数', status: stepStatus[1] },
-                  { title: '审查 Plan', status: stepStatus[2] },
-                  { title: '执行 Apply', status: stepStatus[3] },
-                ]
-            ),
-            { title: '查看结果', status: stepStatus[4] },
-          ]}
-        />
-
-        {currentStep === 0 && (
-          <ResourceSelector
-            operationType={operationType}
-            onOperationTypeChange={setOperationType}
-            onResourceSelected={handleResourceSelected}
+    <ConfigProvider
+      theme={{
+        algorithm: theme.defaultAlgorithm,
+        token: {
+          colorPrimary: '#2563eb',
+          borderRadius: 8,
+        },
+      }}
+    >
+      <Layout style={{ minHeight: '100vh', background: '#f1f5f9' }}>
+        <Header
+          style={{
+            background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
+            padding: '0 32px',
+            display: 'flex',
+            alignItems: 'center',
+            height: 64,
+            cursor: 'pointer',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+          }}
+          onClick={handleReset}
+        >
+          <CloudServerOutlined style={{ fontSize: 28, color: '#60a5fa', marginRight: 12 }} />
+          <Title level={4} style={{ margin: 0, color: '#f1f5f9', letterSpacing: 1 }}>
+            Terraform Agent - 云资源管理
+          </Title>
+        </Header>
+        <Content style={{ padding: '32px 48px', maxWidth: 960, margin: '0 auto' }}>
+          <Steps
+            current={currentStep}
+            style={{ marginBottom: 32, background: '#fff', padding: '20px 32px', borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}
+            items={stepItems}
           />
-        )}
 
-        {currentStep === 1 && resourceSchema && (
-          <ConfigDialog
-            operationType={operationType}
-            resourceType={resourceType}
-            resourceId={targetResourceId}
-            schema={resourceSchema}
-            targetResourceAddress={targetResourceAddress}
-            onComplete={handleConfigComplete}
-            onBack={() => {
-              updateStep(0, 'process')
-              updateStep(1, 'wait')
-              setCurrentStep(0)
-            }}
-          />
-        )}
+          {currentStep === 0 && (
+            <ResourceSelector
+              operationType={operationType}
+              onOperationTypeChange={setOperationType}
+              onResourceSelected={handleResourceSelected}
+            />
+          )}
 
-        {currentStep === 2 && (
-          <CodeReview
-            tfContent={tfContent}
-            operationType={operationType}
-            resourceType={resourceType || ''}
-            targetResourceAddress={targetResourceAddress}
-            onPlanComplete={handlePlanComplete}
-            onError={(err) => handleError(2, err)}
-            onBack={() => {
-              updateStep(1, 'process')
-              updateStep(2, 'wait')
-              setCurrentStep(1)
-            }}
-          />
-        )}
+          {currentStep === 1 && resourceSchema && (
+            <ConfigDialog
+              operationType={operationType}
+              resourceType={resourceType}
+              resourceId={targetResourceId}
+              schema={resourceSchema}
+              targetResourceAddress={targetResourceAddress}
+              onComplete={handleConfigComplete}
+              onBack={() => {
+                updateStep(0, 'process')
+                updateStep(1, 'wait')
+                setCurrentStep(0)
+              }}
+            />
+          )}
 
-        {currentStep === 3 && (
-          <ExecutionPanel
-            tfContent={tfContent}
-            operationType={operationType}
-            resourceType={resourceType || ''}
-            targetResourceAddress={targetResourceAddress}
-            onApplyComplete={handleApplyComplete}
-            onError={(err) => handleError(3, err)}
-            onBack={() => {
-              updateStep(2, 'process')
-              updateStep(3, 'wait')
-              setCurrentStep(2)
-            }}
-          />
-        )}
+          {currentStep === 2 && (
+            <CodeReview
+              tfContent={tfContent}
+              operationType={operationType}
+              resourceType={resourceType || ''}
+              targetResourceAddress={targetResourceAddress}
+              onPlanComplete={handlePlanComplete}
+              onError={(err) => handleError(2, err)}
+              onBack={() => {
+                updateStep(1, 'process')
+                updateStep(2, 'wait')
+                setCurrentStep(1)
+              }}
+            />
+          )}
 
-        {currentStep === 4 && (
-          <div style={{ textAlign: 'center', padding: 48 }}>
-            <Title level={3}>
-              {operationType === 'create' ? '✅ 资源创建完成' : '✅ 资源销毁完成'}
-            </Title>
-            <p style={{ color: '#666', marginBottom: 24 }}>
-              {operationType === 'create'
-                ? 'Terraform 配置已成功执行，资源已创建。'
-                : '资源已成功销毁。'}
-            </p>
+          {currentStep === 3 && (
+            <ExecutionPanel
+              tfContent={tfContent}
+              operationType={operationType}
+              resourceType={resourceType || ''}
+              targetResourceAddress={targetResourceAddress}
+              onApplyComplete={handleApplyComplete}
+              onError={(err) => handleError(3, err)}
+              onBack={() => {
+                updateStep(2, 'process')
+                updateStep(3, 'wait')
+                setCurrentStep(2)
+              }}
+            />
+          )}
+
+          {currentStep === 4 && (
             <div
               style={{
-                background: '#1e1e1e',
-                color: '#d4d4d4',
-                padding: 16,
-                borderRadius: 8,
-                textAlign: 'left',
-                maxHeight: 300,
-                overflow: 'auto',
-                fontFamily: 'monospace',
-                fontSize: 12,
-                marginBottom: 24,
+                background: '#fff',
+                borderRadius: 12,
+                padding: 32,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
               }}
             >
-              {executionLogs.map((line, i) => (
-                <div key={i}>{line}</div>
-              ))}
+              <Result
+                status={executionStatus === 'error' ? 'error' : 'success'}
+                title={
+                  <span style={{ fontSize: 20 }}>
+                    {operationType === 'create' ? '资源创建完成' : operationType === 'update' ? '资源更新完成' : '资源销毁完成'}
+                  </span>
+                }
+                subTitle={
+                  executionStatus === 'success'
+                    ? 'Terraform 配置已成功执行。'
+                    : '执行过程中出现错误，请查看日志。'
+                }
+                extra={
+                  <Button
+                    type="primary"
+                    icon={<ReloadOutlined />}
+                    onClick={handleReset}
+                    size="large"
+                    style={{ borderRadius: 6 }}
+                  >
+                    重新开始
+                  </Button>
+                }
+              />
+              <div style={{ marginTop: 16 }}>
+                <div style={{ marginBottom: 8 }}>
+                  <strong style={{ fontSize: 13, color: '#374151' }}>执行日志</strong>
+                </div>
+                <TerminalView
+                  logs={executionLogs}
+                  maxHeight={300}
+                  placeholder="暂无日志"
+                />
+              </div>
             </div>
-          </div>
-        )}
-      </Content>
-    </Layout>
+          )}
+        </Content>
+      </Layout>
+    </ConfigProvider>
   )
 }
 

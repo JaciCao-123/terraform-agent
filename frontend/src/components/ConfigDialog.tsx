@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { Card, Form, Input, InputNumber, Select, Button, Typography, message, Spin, Alert } from 'antd'
-import { EditOutlined } from '@ant-design/icons'
+import { Card, Form, Input, InputNumber, Select, Button, Typography, message, Spin, Alert, Space } from 'antd'
+import { EditOutlined, ThunderboltOutlined } from '@ant-design/icons'
 import { generateTf, generateDestroyTf, generateUpdateTf, getResourceConfig } from '../services/api'
 import type { OperationType, ResourceSchema } from '../types'
 
@@ -31,7 +31,6 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
       setLoadingConfig(true)
       getResourceConfig(resourceType, resourceId)
         .then((config) => {
-          // 将后端返回的配置字段映射到表单字段名
           const fieldMap: Record<string, string> = {
             bucket: 'bucket',
             acl: 'acl',
@@ -57,20 +56,14 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
     try {
       const values = await form.validateFields()
       setGenerating(true)
-
       const params = values as Record<string, unknown>
       const result = await generateTf({
         resource_type: schema.resource_type,
         params,
         user_description: userDescription || undefined,
       })
-
-      setGeneratedTf(result.tf_content);
-      if (userDescription) {
-        message.success('结合自然语言描述，Terraform 配置生成成功！')
-      } else {
-        message.success('Terraform 配置生成成功！')
-      }
+      setGeneratedTf(result.tf_content)
+      message.success(userDescription ? '结合自然语言描述，配置生成成功！' : 'Terraform 配置生成成功！')
     } catch (err: unknown) {
       if (err instanceof Error) {
         message.error(err.message || '生成失败')
@@ -84,7 +77,6 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
     try {
       const values = await form.validateFields()
       setGenerating(true)
-
       const params = values as Record<string, unknown>
       const result = await generateUpdateTf(
         schema.resource_type,
@@ -92,13 +84,8 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
         params,
         userDescription || undefined,
       )
-
-      setGeneratedTf(result.tf_content);
-      if (userDescription) {
-        message.success('结合自然语言描述，更新配置已生成')
-      } else {
-        message.success('更新配置已生成')
-      }
+      setGeneratedTf(result.tf_content)
+      message.success(userDescription ? '结合自然语言描述，更新配置已生成' : '更新配置已生成')
     } catch (err: unknown) {
       if (err instanceof Error) {
         message.error(err.message || '生成失败')
@@ -115,9 +102,9 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
       const result = await generateDestroyTf(targetResourceAddress, userDescription || undefined)
       setGeneratedTf(result.tf_content)
       if (!result.tf_content) {
-        message.info('使用 terraform state 直接销毁，无需要生成额外配置')
+        message.info('使用 terraform state 直接销毁，无需额外配置')
       } else {
-        message.success('销毁配置已生成')
+        message.success(userDescription ? '结合自然语言描述，销毁配置已生成' : '销毁配置已生成')
       }
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -130,7 +117,6 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
 
   const handleConfirm = () => {
     if (operationType === 'destroy') {
-      // 销毁模式：即使生成的 tf 为空也继续（使用 -target 直接销毁）
       onComplete({}, generatedTf || '')
     } else if (generatedTf) {
       onComplete(form.getFieldsValue() as Record<string, unknown>, generatedTf)
@@ -144,22 +130,10 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
       rules: [
         { required: param.required, message: `请输入${param.label}` },
         ...(param.type === 'number'
-          ? [
-              {
-                type: 'number' as const,
-                min: param.min,
-                max: param.max,
-                message: `取值范围 ${param.min} - ${param.max}`,
-              },
-            ]
+          ? [{ type: 'number' as const, min: param.min, max: param.max, message: `取值范围 ${param.min} - ${param.max}` }]
           : []),
         ...(param.pattern
-          ? [
-              {
-                pattern: new RegExp(param.pattern),
-                message: param.description || '格式不正确',
-              },
-            ]
+          ? [{ pattern: new RegExp(param.pattern), message: param.description || '格式不正确' }]
           : []),
       ],
       initialValue: param.default,
@@ -173,50 +147,50 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
             <Select
               placeholder={`请选择${param.label}`}
               options={param.options?.map((o) => ({ label: o, value: o }))}
+              size="large"
             />
           </Form.Item>
         )
       case 'number':
         return (
           <Form.Item {...commonProps} key={param.name}>
-            <InputNumber
-              style={{ width: '100%' }}
-              min={param.min}
-              max={param.max}
-              placeholder={`${param.min} - ${param.max}`}
-            />
+            <InputNumber style={{ width: '100%' }} min={param.min} max={param.max} placeholder={`${param.min} - ${param.max}`} size="large" />
           </Form.Item>
         )
       case 'password':
         return (
           <Form.Item {...commonProps} key={param.name}>
-            <Password placeholder={`请输入${param.label}`} />
+            <Password placeholder={`请输入${param.label}`} size="large" />
           </Form.Item>
         )
       default:
         return (
           <Form.Item {...commonProps} key={param.name}>
-            <Input placeholder={`请输入${param.label}`} />
+            <Input placeholder={`请输入${param.label}`} size="large" />
           </Form.Item>
         )
     }
   }
 
   return (
-    <Card>
-      <Title level={5} style={{ marginBottom: 24 }}>
+    <Card
+      style={{
+        borderRadius: 12,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+      }}
+    >
+      <Title level={4} style={{ marginBottom: 24 }}>
         {operationType === 'create' ? '配置参数' : operationType === 'update' ? '修改参数' : '确认销毁'} — {schema.display_name}
       </Title>
 
-      {/* 更新模式提示 */}
       {operationType === 'update' && (
         <Alert
           type="info"
           icon={<EditOutlined />}
           message="修改已有资源配置"
-          description={`正在修改资源: ${targetResourceAddress || ''}。当前配置已自动加载，修改后生成新的 Terraform 配置。`}
+          description={`正在修改资源: ${targetResourceAddress || ''}。当前配置已自动加载，修改后重新生成。`}
           showIcon
-          style={{ marginBottom: 16 }}
+          style={{ marginBottom: 16, borderRadius: 6 }}
         />
       )}
 
@@ -228,54 +202,79 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
             </Form>
           </Spin>
 
-          {/* 自然语言描述区域 */}
+          {/* 自然语言描述 */}
           <Card
             size="small"
-            title="📝 自然语言描述（可选）"
-            style={{ marginTop: 16, marginBottom: 16, background: '#fafafa' }}
+            title={<span style={{ fontSize: 13, fontWeight: 600 }}>📝 自然语言描述（可选）</span>}
+            style={{
+              marginTop: 16,
+              marginBottom: 16,
+              background: '#f8fafc',
+              borderRadius: 8,
+              border: '1px solid #e2e8f0',
+            }}
           >
-            <Text type="secondary" style={{ display: 'block', marginBottom: 8 }}>
-              除了上面表单的参数外，你还可以用自然语言描述更多需求，LLM 会结合表单参数和你的描述生成更精准的 Terraform 配置。
+            <Text type="secondary" style={{ display: 'block', marginBottom: 8, fontSize: 13 }}>
+              除了表单参数外，还可以用自然语言描述更多需求，LLM 会结合两者生成更精准的配置。
             </Text>
             <TextArea
               value={userDescription}
               onChange={(e) => setUserDescription(e.target.value)}
-              placeholder="例如：创建一个上海地域的OSS存储桶，存储类型为低频访问，开启版本控制，并对所有人开放公共读权限"
+              placeholder="例如：创建一个上海地域的OSS存储桶，存储类型为低频访问，开启版本控制"
               rows={3}
-              style={{ fontFamily: 'inherit' }}
+              style={{ fontFamily: 'inherit', borderRadius: 6 }}
             />
           </Card>
 
-          <div style={{ marginTop: 16, display: 'flex', gap: 12 }}>
+          <Space>
             <Button
               type="primary"
               size="large"
+              icon={<ThunderboltOutlined />}
               onClick={operationType === 'update' ? handleUpdateGenerate : handleGenerate}
               loading={generating}
+              style={{ borderRadius: 8, minWidth: 160 }}
             >
-              {generating ? <Spin /> : null}
               {operationType === 'update' ? '生成更新配置' : '生成 Terraform 配置'}
             </Button>
-          </div>
+          </Space>
 
           {generatedTf && (
             <Card
-              title="生成的 Terraform 配置"
+              title={<span style={{ fontSize: 13, fontWeight: 600 }}>生成的 Terraform 配置</span>}
               size="small"
-              style={{ marginTop: 24, background: '#f6f8fa' }}
+              style={{
+                marginTop: 24,
+                background: '#f8fafc',
+                borderRadius: 8,
+                border: '1px solid #e2e8f0',
+              }}
             >
-              <TextArea
-                value={generatedTf}
-                rows={10}
-                readOnly
-                style={{ fontFamily: 'monospace', fontSize: 12 }}
-              />
-              <div style={{ marginTop: 16, display: 'flex', gap: 12 }}>
-                <Button type="primary" onClick={handleConfirm}>
+              <pre
+                style={{
+                  fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                  fontSize: 12,
+                  maxHeight: 300,
+                  overflow: 'auto',
+                  margin: 0,
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-all',
+                  color: '#1e293b',
+                  background: '#f1f5f9',
+                  padding: 12,
+                  borderRadius: 6,
+                }}
+              >
+                {generatedTf}
+              </pre>
+              <Space style={{ marginTop: 16 }}>
+                <Button type="primary" size="large" onClick={handleConfirm} style={{ borderRadius: 6, minWidth: 140 }}>
                   确认，下一步 Plan
                 </Button>
-                <Button onClick={() => setGeneratedTf(null)}>重新生成</Button>
-              </div>
+                <Button onClick={() => setGeneratedTf(null)} style={{ borderRadius: 6 }}>
+                  重新生成
+                </Button>
+              </Space>
             </Card>
           )}
         </>
@@ -286,23 +285,29 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
             message="销毁操作不可逆"
             description="即将销毁选中的资源，此操作无法撤销。请确保已备份重要数据。"
             showIcon
-            style={{ marginBottom: 16 }}
+            style={{ marginBottom: 16, borderRadius: 6 }}
           />
 
-          <Text strong style={{ display: 'block', marginBottom: 8 }}>
+          <Text strong style={{ display: 'block', marginBottom: 8, fontSize: 14, color: '#374151' }}>
             目标资源
           </Text>
-          <Text code style={{ fontSize: 13 }}>
+          <Text code style={{ fontSize: 13, padding: '4px 8px', borderRadius: 4 }}>
             {targetResourceAddress || '未选择'}
           </Text>
 
-          {/* 自然语言描述区域 - 销毁模式 */}
+          {/* 自然语言描述 - 销毁模式 */}
           <Card
             size="small"
-            title="📝 自然语言描述（可选）"
-            style={{ marginTop: 16, marginBottom: 16, background: '#fafafa' }}
+            title={<span style={{ fontSize: 13, fontWeight: 600 }}>📝 自然语言描述（可选）</span>}
+            style={{
+              marginTop: 16,
+              marginBottom: 16,
+              background: '#fef2f2',
+              borderRadius: 8,
+              border: '1px solid #fecaca',
+            }}
           >
-            <Text type="secondary" style={{ display: 'block', marginBottom: 8 }}>
+            <Text type="secondary" style={{ display: 'block', marginBottom: 8, fontSize: 13 }}>
               你可以用自然语言描述销毁的具体要求，LLM 会结合描述生成更精准的销毁配置。
             </Text>
             <TextArea
@@ -310,40 +315,60 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
               onChange={(e) => setUserDescription(e.target.value)}
               placeholder="例如：销毁时同时删除关联的OSS Bucket ACL配置"
               rows={3}
-              style={{ fontFamily: 'inherit' }}
+              style={{ fontFamily: 'inherit', borderRadius: 6 }}
             />
           </Card>
 
-          <div style={{ marginTop: 24 }}>
+          <Space>
             <Button
               type="primary"
               danger
               size="large"
+              icon={<ThunderboltOutlined />}
               onClick={handleDestroyGenerate}
               loading={generating}
+              style={{ borderRadius: 8, minWidth: 160 }}
             >
               生成销毁配置
             </Button>
-          </div>
+          </Space>
 
           {generatedTf && (
             <Card
-              title="生成的 Terraform 配置"
+              title={<span style={{ fontSize: 13, fontWeight: 600 }}>生成的 Terraform 配置</span>}
               size="small"
-              style={{ marginTop: 24, background: '#f6f8fa' }}
+              style={{
+                marginTop: 24,
+                background: '#fef2f2',
+                borderRadius: 8,
+                border: '1px solid #fecaca',
+              }}
             >
-              <TextArea
-                value={generatedTf}
-                rows={5}
-                readOnly
-                style={{ fontFamily: 'monospace', fontSize: 12 }}
-              />
-              <div style={{ marginTop: 16, display: 'flex', gap: 12 }}>
-                <Button type="primary" danger onClick={handleConfirm}>
-                  确认销毁，下一步 Plan Destroy
+              <pre
+                style={{
+                  fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                  fontSize: 12,
+                  maxHeight: 200,
+                  overflow: 'auto',
+                  margin: 0,
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-all',
+                  color: '#1e293b',
+                  background: '#f1f5f9',
+                  padding: 12,
+                  borderRadius: 6,
+                }}
+              >
+                {generatedTf}
+              </pre>
+              <Space style={{ marginTop: 16 }}>
+                <Button type="primary" danger size="large" onClick={handleConfirm} style={{ borderRadius: 6, minWidth: 160 }}>
+                  确认销毁，下一步 Plan
                 </Button>
-                <Button onClick={() => setGeneratedTf(null)}>重新生成</Button>
-              </div>
+                <Button onClick={() => setGeneratedTf(null)} style={{ borderRadius: 6 }}>
+                  重新生成
+                </Button>
+              </Space>
             </Card>
           )}
 
@@ -351,21 +376,28 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
             <div style={{ marginTop: 24 }}>
               <Card
                 size="small"
-                style={{ marginTop: 16, borderColor: '#bae0ff' }}
+                style={{
+                  marginTop: 16,
+                  borderColor: '#bfdbfe',
+                  borderRadius: 8,
+                  background: '#eff6ff',
+                }}
               >
-                资源不在当前 Terraform state 中，将直接使用 <code>-target={targetResourceAddress}</code> 执行 plan-destroy
+                <Text>
+                  资源不在当前 Terraform state 中，将直接使用 <code>-target={targetResourceAddress}</code> 执行 plan-destroy
+                </Text>
               </Card>
-              <div style={{ marginTop: 16, display: 'flex', gap: 12 }}>
-                <Button type="primary" danger onClick={handleConfirm}>
+              <Space style={{ marginTop: 16 }}>
+                <Button type="primary" danger size="large" onClick={handleConfirm} style={{ borderRadius: 6, minWidth: 160 }}>
                   确认，下一步 Plan Destroy
                 </Button>
-              </div>
+              </Space>
             </div>
           )}
         </div>
       )}
 
-      <Button onClick={onBack} style={{ marginTop: 16 }}>
+      <Button onClick={onBack} style={{ marginTop: 16, borderRadius: 6 }}>
         返回上一步
       </Button>
     </Card>

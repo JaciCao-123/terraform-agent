@@ -1,9 +1,10 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react'
-import { Card, Button, Typography, Spin, Alert, Space } from 'antd'
+import React, { useState, useCallback } from 'react'
+import { Card, Button, Typography, Alert, Space } from 'antd'
 import { executeApply, executeDestroy } from '../services/api'
+import TerminalView from './TerminalView'
 import type { OperationType, SSEMessage } from '../types'
 
-const { Title, Text } = Typography
+const { Title } = Typography
 
 interface Props {
   tfContent: string
@@ -27,13 +28,6 @@ const ExecutionPanel: React.FC<Props> = ({
   const [applying, setApplying] = useState(false)
   const [applyLogs, setApplyLogs] = useState<string[]>([])
   const [applyDone, setApplyDone] = useState(false)
-  const logRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (logRef.current) {
-      logRef.current.scrollTop = logRef.current.scrollHeight
-    }
-  }, [applyLogs])
 
   const handleMessage = useCallback((msg: SSEMessage) => {
     if (msg.log) {
@@ -52,7 +46,8 @@ const ExecutionPanel: React.FC<Props> = ({
   const handleApplyComplete = useCallback(() => {
     setApplying(false)
     setApplyDone(true)
-  }, [])
+    onApplyComplete(applyLogs)
+  }, [applyLogs, onApplyComplete])
 
   const startApply = useCallback(() => {
     setApplying(true)
@@ -71,8 +66,13 @@ const ExecutionPanel: React.FC<Props> = ({
   }
 
   return (
-    <Card>
-      <Title level={5} style={{ marginBottom: 24 }}>
+    <Card
+      style={{
+        borderRadius: 12,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+      }}
+    >
+      <Title level={4} style={{ marginBottom: 24 }}>
         {operationType === 'create' ? '执行 Terraform Apply' : operationType === 'update' ? '执行 Terraform Apply' : '执行 Terraform Destroy'}
       </Title>
 
@@ -82,48 +82,30 @@ const ExecutionPanel: React.FC<Props> = ({
           type="warning"
           message="销毁操作不可逆，请确认已备份重要数据"
           showIcon
-          style={{ marginBottom: 16 }}
+          style={{ marginBottom: 16, borderRadius: 6 }}
         />
       )}
 
       {/* 执行日志 */}
-      <Card
-        title="Terraform 执行日志"
-        size="small"
-        style={{ background: '#1e1e1e', color: '#d4d4d4' }}
-      >
-        <div
-          ref={logRef}
-          style={{
-            fontFamily: 'monospace',
-            fontSize: 12,
-            maxHeight: 400,
-            overflow: 'auto',
-            minHeight: 150,
-          }}
-        >
-          {applyLogs.length === 0 && !applying && (
-            <Text style={{ color: '#888' }}>
-              点击下方按钮开始执行
-            </Text>
-          )}
-          {applyLogs.map((line, i) => (
-            <div key={i}>{line}</div>
-          ))}
-          {applying && (
-            <div style={{ color: '#1677ff' }}>
-              <Spin size="small" /> 正在执行 terraform {operationType === 'create' || operationType === 'update' ? 'apply' : 'destroy'}...
-            </div>
-          )}
-        </div>
-      </Card>
+      <div style={{ marginBottom: 8 }}>
+        <strong style={{ fontSize: 13, color: '#374151' }}>
+          {operationType === 'destroy' ? 'Terraform Destroy' : 'Terraform Apply'} 执行日志
+        </strong>
+      </div>
+      <TerminalView
+        logs={applyLogs}
+        loading={applying}
+        loadingText={`正在执行 terraform ${operationType}...`}
+        placeholder={`点击下方按钮开始执行`}
+        maxHeight={450}
+      />
 
       {applyDone && (
         <Alert
           type="success"
           message={`${operationType === 'create' ? 'Create' : operationType === 'update' ? 'Update' : 'Destroy'} 执行完成`}
           showIcon
-          style={{ marginTop: 16 }}
+          style={{ marginTop: 16, borderRadius: 6 }}
         />
       )}
 
@@ -132,22 +114,27 @@ const ExecutionPanel: React.FC<Props> = ({
           <Button
             type="primary"
             size="large"
-            danger={operationType === 'destroy'}
             onClick={startApply}
             loading={applying}
+            style={{ borderRadius: 6, minWidth: 140 }}
           >
-            {applying
-              ? `正在${operationType === 'create' ? '创建' : operationType === 'update' ? '更新' : '销毁'}...`
-              : operationType === 'create' || operationType === 'update'
-                ? '执行 Apply'
-                : '执行 Destroy'}
+            {operationType === 'destroy' ? '开始执行 Destroy' : '开始执行 Apply'}
           </Button>
         ) : (
-          <Button type="primary" size="large" onClick={handleFinish}>
+          <Button
+            type="primary"
+            size="large"
+            onClick={handleFinish}
+            style={{ borderRadius: 6, minWidth: 140 }}
+          >
             查看结果
           </Button>
         )}
-        <Button onClick={onBack} disabled={applying}>
+        <Button
+          onClick={onBack}
+          disabled={applying}
+          style={{ borderRadius: 6 }}
+        >
           返回上一步
         </Button>
       </Space>

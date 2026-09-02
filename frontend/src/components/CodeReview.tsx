@@ -1,6 +1,7 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react'
-import { Card, Button, Typography, Spin, Alert, Space } from 'antd'
+import React, { useState, useCallback } from 'react'
+import { Card, Button, Typography, Alert, Space } from 'antd'
 import { executePlan, executePlanDestroy } from '../services/api'
+import TerminalView from './TerminalView'
 import type { OperationType, SSEMessage } from '../types'
 
 const { Title, Text } = Typography
@@ -27,14 +28,6 @@ const CodeReview: React.FC<Props> = ({
   const [planning, setPlanning] = useState(false)
   const [planLogs, setPlanLogs] = useState<string[]>([])
   const [planDone, setPlanDone] = useState(false)
-  const logRef = useRef<HTMLDivElement>(null)
-
-  // 自动滚动到底部
-  useEffect(() => {
-    if (logRef.current) {
-      logRef.current.scrollTop = logRef.current.scrollHeight
-    }
-  }, [planLogs])
 
   const handleMessage = useCallback((msg: SSEMessage) => {
     if (msg.log) {
@@ -51,10 +44,14 @@ const CodeReview: React.FC<Props> = ({
   )
 
   const handlePlanComplete = useCallback((fixedTf?: string) => {
-    setPlanning(false)
-    setPlanDone(true)
-    onPlanComplete(planLogs, fixedTf)
-  }, [planLogs, onPlanComplete])
+    // Use a functional updater to get the latest planLogs
+    setPlanLogs((prevLogs) => {
+      setPlanning(false)
+      setPlanDone(true)
+      onPlanComplete(prevLogs, fixedTf)
+      return prevLogs
+    })
+  }, [onPlanComplete])
 
   const startPlan = useCallback(() => {
     setPlanning(true)
@@ -73,26 +70,37 @@ const CodeReview: React.FC<Props> = ({
   }
 
   return (
-    <Card>
-      <Title level={5} style={{ marginBottom: 24 }}>
-        审查 Terraform Plan
+    <Card
+      style={{
+        borderRadius: 12,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+      }}
+    >
+      <Title level={4} style={{ marginBottom: 24 }}>
+        {operationType === 'destroy' ? '审查 Terraform Destroy Plan' : '审查 Terraform Plan'}
       </Title>
 
       {/* Terraform 代码预览 */}
       <Card
-        title="生成的 Terraform 配置"
+        title={<span style={{ fontSize: 13, fontWeight: 600 }}>生成的 Terraform 配置</span>}
         size="small"
-        style={{ marginBottom: 16, background: '#f6f8fa' }}
+        style={{
+          marginBottom: 16,
+          background: '#f8fafc',
+          borderRadius: 8,
+          border: '1px solid #e2e8f0',
+        }}
       >
         <pre
           style={{
-            fontFamily: 'monospace',
+            fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
             fontSize: 12,
             maxHeight: 200,
             overflow: 'auto',
             margin: 0,
             whiteSpace: 'pre-wrap',
             wordBreak: 'break-all',
+            color: '#1e293b',
           }}
         >
           {tfContent || '# 销毁模式：使用已有资源状态'}
@@ -100,57 +108,53 @@ const CodeReview: React.FC<Props> = ({
       </Card>
 
       {/* Plan 日志 */}
-      <Card
-        title="Terraform Plan 输出"
-        size="small"
-        style={{ background: '#1e1e1e', color: '#d4d4d4' }}
-      >
-        <div
-          ref={logRef}
-          style={{
-            fontFamily: 'monospace',
-            fontSize: 12,
-            maxHeight: 300,
-            overflow: 'auto',
-            minHeight: 100,
-          }}
-        >
-          {planLogs.length === 0 && !planning && (
-            <Text style={{ color: '#888' }}>
-              点击下方"执行 Plan"查看资源变更预览
-            </Text>
-          )}
-          {planLogs.map((line, i) => (
-            <div key={i}>{line}</div>
-          ))}
-          {planning && (
-            <div style={{ color: '#1677ff' }}>
-              <Spin size="small" /> 正在执行 terraform plan...
-            </div>
-          )}
-        </div>
-      </Card>
+      <div style={{ marginBottom: 8 }}>
+        <Text strong style={{ fontSize: 13, color: '#374151' }}>
+          Terraform Plan 输出
+        </Text>
+      </div>
+      <TerminalView
+        logs={planLogs}
+        loading={planning}
+        loadingText="正在执行 terraform plan..."
+        placeholder="点击下方按钮执行 Plan"
+      />
 
       {planDone && (
         <Alert
           type="success"
-          message="Plan 执行完成，请确认后执行 Apply"
+          message="Plan 执行完成，请确认后继续"
           showIcon
-          style={{ marginTop: 16 }}
+          style={{ marginTop: 16, borderRadius: 6 }}
         />
       )}
 
       <Space style={{ marginTop: 16 }}>
         {!planDone ? (
-          <Button type="primary" size="large" onClick={startPlan} loading={planning}>
+          <Button
+            type="primary"
+            size="large"
+            onClick={startPlan}
+            loading={planning}
+            style={{ borderRadius: 6, minWidth: 140 }}
+          >
             执行 Plan
           </Button>
         ) : (
-          <Button type="primary" size="large" onClick={handleConfirm}>
-            确认，下一步 Apply
+          <Button
+            type="primary"
+            size="large"
+            onClick={handleConfirm}
+            style={{ borderRadius: 6, minWidth: 140 }}
+          >
+            确认，下一步
           </Button>
         )}
-        <Button onClick={onBack} disabled={planning}>
+        <Button
+          onClick={onBack}
+          disabled={planning}
+          style={{ borderRadius: 6 }}
+        >
           返回上一步
         </Button>
       </Space>
