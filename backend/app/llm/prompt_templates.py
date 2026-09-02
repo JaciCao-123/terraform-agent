@@ -69,6 +69,29 @@ output "slb_address" {
 }""",
 }
 
+# 销毁操作的 few-shot 示例
+DESTROY_EXAMPLES = {
+    "oss": """## 示例：销毁 OSS Bucket（同时删除关联的 ACL）
+
+resource "alicloud_oss_bucket_acl" "this" {
+  bucket = "my-app-data-store"
+  acl    = "private"
+}
+
+resource "alicloud_oss_bucket" "this" {
+  bucket = "my-app-data-store"
+}
+""",
+    "ecs": """## 示例：销毁 ECS 实例
+
+resource "alicloud_instance" "this" {
+  instance_name = "web-server-01"
+  instance_type = "ecs.g6.large"
+  image_id      = "aliyun_2_1903_x64_20G_alibase_2024"
+}
+""",
+}
+
 
 def build_terraform_generation_prompt(
     resource_type: str,
@@ -150,7 +173,10 @@ def build_terraform_generation_prompt(
         if user_description:
             user_prompt += f"用户补充的自然语言描述:\n{user_description}\n\n"
         # 添加 few-shot 示例
-        example = FEW_SHOT_EXAMPLES.get(resource_type)
+        if action == "destroy":
+            example = DESTROY_EXAMPLES.get(resource_type, FEW_SHOT_EXAMPLES.get(resource_type))
+        else:
+            example = FEW_SHOT_EXAMPLES.get(resource_type)
         if example:
             user_prompt += f"请参考以下示例格式（注意示例中的参数值是示意，请使用用户提供的实际参数值）：\n{example}\n\n"
         user_prompt += "请直接输出 HCL 代码。"
@@ -165,7 +191,10 @@ def build_terraform_generation_prompt(
         if user_description:
             user_prompt += f"用户补充的自然语言描述:\n{user_description}\n\n"
         # 添加 few-shot 示例
-        example = FEW_SHOT_EXAMPLES.get(resource_type)
+        if action == "destroy":
+            example = DESTROY_EXAMPLES.get(resource_type, FEW_SHOT_EXAMPLES.get(resource_type))
+        else:
+            example = FEW_SHOT_EXAMPLES.get(resource_type)
         if example:
             user_prompt += f"请参考以下示例格式（注意示例中的参数值是示意，请使用用户提供的实际参数值）：\n{example}\n\n"
         user_prompt += "请直接输出 HCL 代码。"

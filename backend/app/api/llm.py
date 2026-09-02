@@ -43,13 +43,14 @@ async def generate_tf(req: GenerateRequest):
 
 class GenerateDestroyRequest(BaseModel):
     resource_address: str
+    user_description: Optional[str] = None
 
 
 @router.post("/generate-destroy", response_model=GenerateResponse)
 async def generate_destroy_tf(req: GenerateDestroyRequest):
     """生成销毁指定资源的 Terraform 配置"""
     try:
-        tf_content = await get_tf_manager().generate_destroy_tf(req.resource_address)
+        tf_content = await get_tf_manager().generate_destroy_tf(req.resource_address, req.user_description)
         return GenerateResponse(tf_content=tf_content)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"生成失败: {str(e)}")

@@ -112,7 +112,7 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
     if (!targetResourceAddress) return
     setGenerating(true)
     try {
-      const result = await generateDestroyTf(targetResourceAddress)
+      const result = await generateDestroyTf(targetResourceAddress, userDescription || undefined)
       setGeneratedTf(result.tf_content)
       if (!result.tf_content) {
         message.info('使用 terraform state 直接销毁，无需要生成额外配置')
@@ -295,6 +295,24 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
           <Text code style={{ fontSize: 13 }}>
             {targetResourceAddress || '未选择'}
           </Text>
+
+          {/* 自然语言描述区域 - 销毁模式 */}
+          <Card
+            size="small"
+            title="📝 自然语言描述（可选）"
+            style={{ marginTop: 16, marginBottom: 16, background: '#fafafa' }}
+          >
+            <Text type="secondary" style={{ display: 'block', marginBottom: 8 }}>
+              你可以用自然语言描述销毁的具体要求，LLM 会结合描述生成更精准的销毁配置。
+            </Text>
+            <TextArea
+              value={userDescription}
+              onChange={(e) => setUserDescription(e.target.value)}
+              placeholder="例如：销毁时同时删除关联的OSS Bucket ACL配置"
+              rows={3}
+              style={{ fontFamily: 'inherit' }}
+            />
+          </Card>
 
           <div style={{ marginTop: 24 }}>
             <Button

@@ -61,10 +61,10 @@ export async function generateTfWithDescription(
 }
 
 /** 调用 LLM 生成销毁用的 Terraform 配置 */
-export async function generateDestroyTf(resource_address: string): Promise<GenerateResponse> {
+export async function generateDestroyTf(resource_address: string, user_description?: string): Promise<GenerateResponse> {
   return request<GenerateResponse>('/llm/generate-destroy', {
     method: 'POST',
-    body: JSON.stringify({ resource_address }),
+    body: JSON.stringify({ resource_address, user_description }),
   })
 }
 

@@ -88,10 +88,11 @@ class TerraformManager:
         )
         return tf_content.strip()
 
-    async def generate_destroy_tf(self, resource_address: str) -> str:
+    async def generate_destroy_tf(self, resource_address: str, user_description: Optional[str] = None) -> str:
         """生成销毁指定资源的 Terraform 配置"""
         # 从 state 中获取资源类型
         from app.core.state_manager import StateManager
+        from app.llm.prompt_templates import build_terraform_generation_prompt
 
         state_manager = StateManager()
         resources = state_manager.get_resource_list()
@@ -111,6 +112,27 @@ class TerraformManager:
         if not tf_resource:
             return ""
 
+        # 如果有自然语言描述，通过 LLM 生成（可以结合描述处理关联资源）
+        if user_description:
+            schema = self.get_resource_schema(resource_type)
+            if schema:
+                system_prompt, user_prompt = build_terraform_generation_prompt(
+                    resource_type=resource_type,
+                    resource_display_name=schema["display_name"],
+                    schema_json=json.dumps(schema, ensure_ascii=False, indent=2),
+                    params={},
+                    action="destroy",
+                    existing_resource_address=resource_address,
+                    user_description=user_description,
+                )
+                tf_content = await self.llm.generate(
+                    prompt=user_prompt,
+                    system_prompt=system_prompt,
+                    temperature=0.1,
+                )
+                return tf_content.strip()
+
+        # 默认返回空框架
         return f"""resource "{tf_resource}" "{target["name"]}" {{
   # 此资源将被销毁，详情请查看 terraform plan -destroy
 }}
