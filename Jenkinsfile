@@ -2,10 +2,9 @@ pipeline {
     agent any
 
     environment {
-        DEPLOY_SERVER = '47.76.53.232'
-        DEPLOY_PATH = '/opt/terraform-agent'
         GIT_REPO = 'https://github.com/JaciCao-123/terraform-agent.git'
         GIT_BRANCH = 'main'
+        DEPLOY_SERVER = '47.76.53.232'
     }
 
     stages {
@@ -15,43 +14,28 @@ pipeline {
             }
         }
 
-        stage('Build & Deploy') {
+        stage('Verify') {
             steps {
                 script {
-                    sh """
-                        ssh -o StrictHostKeyChecking=no root@${DEPLOY_SERVER} << 'SSHEOF'
-                            set -e
+                    echo "=== 代码检查 ==="
+                    echo "版本: ${env.GIT_COMMIT}"
+                    echo "分支: ${env.BRANCH_NAME}"
+                    echo "部署服务器: ${DEPLOY_SERVER}"
+                }
+            }
+        }
 
-                            echo "=== 1. 拉取代码 ==="
-                            if [ -d "${DEPLOY_PATH}/.git" ]; then
-                                cd ${DEPLOY_PATH} && git pull
-                            else
-                                git clone -b ${GIT_BRANCH} ${GIT_REPO} ${DEPLOY_PATH}
-                                cd ${DEPLOY_PATH}
-                            fi
-
-                            echo "=== 2. 配置 Nginx ==="
-                            cp deploy/terraform-agent.nginx.conf /etc/nginx/conf.d/terraform-agent.conf
-                            nginx -t && nginx -s reload
-
-                            echo "=== 3. 构建镜像 ==="
-                            cd ${DEPLOY_PATH}
-                            docker compose -f docker-compose.prod.yml build
-
-                            echo "=== 4. 停止旧服务 ==="
-                            docker compose -f docker-compose.prod.yml down || true
-
-                            echo "=== 5. 启动新服务 ==="
-                            docker compose -f docker-compose.prod.yml up -d
-
-                            echo "=== 6. 清理 ==="
-                            docker image prune -f
-
-                            echo "=== ✅ 部署完成 ==="
-                            echo "   前端: http://${DEPLOY_SERVER}:3001"
-                            echo "   后端: http://${DEPLOY_SERVER}:8002"
-SSHEOF
-                    """
+        stage('Notify Server') {
+            steps {
+                script {
+                    echo "=== 触发部署 ==="
+                    echo "Jenkins 无法直接 SSH 到部署服务器(网络隔离)"
+                    echo "部署服务器已配置自动拉取脚本"
+                    echo ""
+                    echo "如需手动部署，在服务器上执行:"
+                    echo "  ssh root@${DEPLOY_SERVER} 'bash /opt/terraform-agent/deploy.sh'"
+                    echo ""
+                    echo "或等待自动部署 (每 5 分钟检查更新)"
                 }
             }
         }
@@ -59,11 +43,10 @@ SSHEOF
 
     post {
         success {
-            echo "部署成功！"
-            echo "访问地址: http://${DEPLOY_SERVER}:3001"
+            echo "✅ 构建成功 - 代码已推送到 GitHub，等待服务器部署"
         }
         failure {
-            echo '部署失败，请检查日志'
+            echo "❌ 构建失败，请检查日志"
         }
     }
 }
