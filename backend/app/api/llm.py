@@ -22,6 +22,7 @@ def get_tf_manager() -> TerraformManager:
 class GenerateRequest(BaseModel):
     resource_type: str
     params: dict
+    user_description: Optional[str] = None
 
 
 class GenerateResponse(BaseModel):
@@ -32,7 +33,7 @@ class GenerateResponse(BaseModel):
 async def generate_tf(req: GenerateRequest):
     """调用 LLM 生成 Terraform 配置"""
     try:
-        tf_content = await get_tf_manager().generate_tf(req.resource_type, req.params)
+        tf_content = await get_tf_manager().generate_tf(req.resource_type, req.params, req.user_description)
         return GenerateResponse(tf_content=tf_content)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -58,6 +59,7 @@ class GenerateUpdateRequest(BaseModel):
     resource_type: str
     resource_address: str
     params: dict
+    user_description: Optional[str] = None
 
 
 @router.post("/generate-update", response_model=GenerateResponse)
@@ -65,7 +67,7 @@ async def generate_update_tf(req: GenerateUpdateRequest):
     """生成更新已有资源的 Terraform 配置"""
     try:
         tf_content = await get_tf_manager().generate_update_tf(
-            req.resource_type, req.resource_address, req.params
+            req.resource_type, req.resource_address, req.params, req.user_description
         )
         return GenerateResponse(tf_content=tf_content)
     except Exception as e:

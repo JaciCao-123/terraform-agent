@@ -23,6 +23,7 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
   const [generating, setGenerating] = useState(false)
   const [loadingConfig, setLoadingConfig] = useState(false)
   const [generatedTf, setGeneratedTf] = useState<string | null>(null)
+  const [userDescription, setUserDescription] = useState('')
 
   // 更新模式：加载当前资源配置回填表单
   useEffect(() => {
@@ -61,10 +62,15 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
       const result = await generateTf({
         resource_type: schema.resource_type,
         params,
+        user_description: userDescription || undefined,
       })
 
-      setGeneratedTf(result.tf_content)
-      message.success('Terraform 配置生成成功！')
+      setGeneratedTf(result.tf_content);
+      if (userDescription) {
+        message.success('结合自然语言描述，Terraform 配置生成成功！')
+      } else {
+        message.success('Terraform 配置生成成功！')
+      }
     } catch (err: unknown) {
       if (err instanceof Error) {
         message.error(err.message || '生成失败')
@@ -84,10 +90,15 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
         schema.resource_type,
         targetResourceAddress || '',
         params,
+        userDescription || undefined,
       )
 
-      setGeneratedTf(result.tf_content)
-      message.success('更新配置已生成')
+      setGeneratedTf(result.tf_content);
+      if (userDescription) {
+        message.success('结合自然语言描述，更新配置已生成')
+      } else {
+        message.success('更新配置已生成')
+      }
     } catch (err: unknown) {
       if (err instanceof Error) {
         message.error(err.message || '生成失败')
@@ -216,6 +227,24 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
               {schema.core_params.map(renderFormItem)}
             </Form>
           </Spin>
+
+          {/* 自然语言描述区域 */}
+          <Card
+            size="small"
+            title="📝 自然语言描述（可选）"
+            style={{ marginTop: 16, marginBottom: 16, background: '#fafafa' }}
+          >
+            <Text type="secondary" style={{ display: 'block', marginBottom: 8 }}>
+              除了上面表单的参数外，你还可以用自然语言描述更多需求，LLM 会结合表单参数和你的描述生成更精准的 Terraform 配置。
+            </Text>
+            <TextArea
+              value={userDescription}
+              onChange={(e) => setUserDescription(e.target.value)}
+              placeholder="例如：创建一个上海地域的OSS存储桶，存储类型为低频访问，开启版本控制，并对所有人开放公共读权限"
+              rows={3}
+              style={{ fontFamily: 'inherit' }}
+            />
+          </Card>
 
           <div style={{ marginTop: 16, display: 'flex', gap: 12 }}>
             <Button

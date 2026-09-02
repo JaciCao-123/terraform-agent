@@ -50,6 +50,16 @@ export async function generateTf(req: GenerateRequest): Promise<GenerateResponse
   })
 }
 
+/** 调用 LLM 生成 Terraform 配置（含自然语言描述） */
+export async function generateTfWithDescription(
+  req: GenerateRequest & { user_description: string }
+): Promise<GenerateResponse> {
+  return request<GenerateResponse>('/llm/generate', {
+    method: 'POST',
+    body: JSON.stringify(req),
+  })
+}
+
 /** 调用 LLM 生成销毁用的 Terraform 配置 */
 export async function generateDestroyTf(resource_address: string): Promise<GenerateResponse> {
   return request<GenerateResponse>('/llm/generate-destroy', {
@@ -63,10 +73,11 @@ export async function generateUpdateTf(
   resource_type: string,
   resource_address: string,
   params: Record<string, unknown>,
+  user_description?: string,
 ): Promise<GenerateResponse> {
   return request<GenerateResponse>('/llm/generate-update', {
     method: 'POST',
-    body: JSON.stringify({ resource_type, resource_address, params }),
+    body: JSON.stringify({ resource_type, resource_address, params, user_description }),
   })
 }
 

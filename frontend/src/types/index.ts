@@ -41,6 +41,7 @@ export interface ResourceInstance {
 export interface GenerateRequest {
   resource_type: string
   params: Record<string, unknown>
+  user_description?: string
 }
 
 /** 生成 Terraform 配置的响应 */

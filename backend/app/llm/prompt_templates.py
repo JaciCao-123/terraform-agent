@@ -1,5 +1,7 @@
 """Prompt 模板：生成 Terraform 配置文件"""
 
+from typing import Optional
+
 
 def build_terraform_generation_prompt(
     resource_type: str,
@@ -8,6 +10,7 @@ def build_terraform_generation_prompt(
     params: dict,
     action: str = "create",
     existing_resource_address: str = "",
+    user_description: Optional[str] = None,
 ) -> tuple[str, str]:
     """
     构建生成 Terraform 代码的 Prompt。
@@ -40,6 +43,12 @@ def build_terraform_generation_prompt(
             "- Terraform 会自动计算出变更 diff，不需要额外处理\n"
         )
 
+    # 自然语言描述
+    if user_description:
+        extra_rules += (
+            "- 以下用户使用自然语言描述的需求，请结合表单参数一起理解，生成最符合用户意图的配置\n"
+        )
+
     system_prompt = (
         "你是一个 Terraform 配置生成专家，精通阿里云 (Aliyun) 的 Terraform Provider。\n"
         "你的任务是根据用户提供的资源类型和参数，生成正确的 Terraform HCL 配置代码。\n"
@@ -50,6 +59,7 @@ def build_terraform_generation_prompt(
         "4. 使用 alicloud_ 前缀的资源类型\n"
         "5. 参数值必须严格使用用户提供的值，不要自行修改或添加默认值\n"
         "6. 不要添加任何注释行\n"
+        "7. 表单参数优先于自然语言描述，如果两者冲突以表单参数为准\n"
         f"{extra_rules}"
     )
 
@@ -61,8 +71,10 @@ def build_terraform_generation_prompt(
             f"目标资源地址: {existing_resource_address}\n\n"
             f"用户提供的更新参数:\n{params}\n\n"
             f"资源 Schema 定义:\n{schema_json}\n\n"
-            f"请直接输出 HCL 代码。"
         )
+        if user_description:
+            user_prompt += f"用户补充的自然语言描述:\n{user_description}\n\n"
+        user_prompt += "请直接输出 HCL 代码。"
     else:
         user_prompt = (
             f"请生成 Terraform 配置代码，用于在阿里云上{action_label}一个 {resource_display_name}。\n\n"
@@ -70,8 +82,10 @@ def build_terraform_generation_prompt(
             f"操作: {action_label}\n\n"
             f"用户提供的参数:\n{params}\n\n"
             f"资源 Schema 定义:\n{schema_json}\n\n"
-            f"请直接输出 HCL 代码。"
         )
+        if user_description:
+            user_prompt += f"用户补充的自然语言描述:\n{user_description}\n\n"
+        user_prompt += "请直接输出 HCL 代码。"
 
     return system_prompt, user_prompt
 

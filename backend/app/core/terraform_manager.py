@@ -66,7 +66,7 @@ class TerraformManager:
         """获取指定资源类型的 Schema"""
         return self.schemas.get(resource_type)
 
-    async def generate_tf(self, resource_type: str, params: dict) -> str:
+    async def generate_tf(self, resource_type: str, params: dict, user_description: Optional[str] = None) -> str:
         """调用 LLM 生成 Terraform 配置文件"""
         schema = self.get_resource_schema(resource_type)
         if not schema:
@@ -78,6 +78,7 @@ class TerraformManager:
             schema_json=json.dumps(schema, ensure_ascii=False, indent=2),
             params=params,
             action="create",
+            user_description=user_description,
         )
         tf_content = await self.llm.generate(
             prompt=user_prompt,
@@ -114,7 +115,7 @@ class TerraformManager:
 }}
 """
 
-    async def generate_update_tf(self, resource_type: str, resource_address: str, params: dict) -> str:
+    async def generate_update_tf(self, resource_type: str, resource_address: str, params: dict, user_description: Optional[str] = None) -> str:
         """生成更新已有资源的 Terraform 配置"""
         schema = self.get_resource_schema(resource_type)
         if not schema:
@@ -127,6 +128,7 @@ class TerraformManager:
             params=params,
             action="update",
             existing_resource_address=resource_address,
+            user_description=user_description,
         )
         tf_content = await self.llm.generate(
             prompt=user_prompt,
