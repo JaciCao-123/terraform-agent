@@ -16,6 +16,12 @@ interface Props {
   onBack: () => void
 }
 
+const cardStyle = {
+  borderRadius: 14,
+  border: '1px solid #334155',
+  background: 'linear-gradient(135deg, #1e293b 0%, #1a2332 100%)',
+}
+
 const CodeReview: React.FC<Props> = ({
   tfContent,
   operationType,
@@ -30,21 +36,15 @@ const CodeReview: React.FC<Props> = ({
   const [planDone, setPlanDone] = useState(false)
 
   const handleMessage = useCallback((msg: SSEMessage) => {
-    if (msg.log) {
-      setPlanLogs((prev) => [...prev, msg.log!])
-    }
+    if (msg.log) setPlanLogs((prev) => [...prev, msg.log!])
   }, [])
 
-  const handlePlanError = useCallback(
-    (err: Error) => {
-      setPlanning(false)
-      onError(err.message)
-    },
-    [onError],
-  )
+  const handlePlanError = useCallback((err: Error) => {
+    setPlanning(false)
+    onError(err.message)
+  }, [onError])
 
   const handlePlanComplete = useCallback((fixedTf?: string) => {
-    // Use a functional updater to get the latest planLogs
     setPlanLogs((prevLogs) => {
       setPlanning(false)
       setPlanDone(true)
@@ -57,7 +57,6 @@ const CodeReview: React.FC<Props> = ({
     setPlanning(true)
     setPlanLogs([])
     setPlanDone(false)
-
     if (operationType === 'create' || operationType === 'update') {
       executePlan(tfContent, resourceType, handleMessage, handlePlanError, handlePlanComplete)
     } else {
@@ -65,31 +64,18 @@ const CodeReview: React.FC<Props> = ({
     }
   }, [tfContent, resourceType, operationType, targetResourceAddress, handleMessage, handlePlanError, handlePlanComplete])
 
-  const handleConfirm = () => {
-    onPlanComplete(planLogs)
-  }
+  const handleConfirm = () => onPlanComplete(planLogs)
 
   return (
-    <Card
-      style={{
-        borderRadius: 12,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-      }}
-    >
-      <Title level={4} style={{ marginBottom: 24 }}>
+    <Card style={cardStyle}>
+      <Title level={4} style={{ marginBottom: 24, color: '#f1f5f9', fontSize: 18 }}>
         {operationType === 'destroy' ? '审查 Terraform Destroy Plan' : '审查 Terraform Plan'}
       </Title>
 
-      {/* Terraform 代码预览 */}
       <Card
-        title={<span style={{ fontSize: 13, fontWeight: 600 }}>生成的 Terraform 配置</span>}
+        title={<span style={{ fontSize: 13, fontWeight: 600, color: '#cbd5e1' }}>生成的 Terraform 配置</span>}
         size="small"
-        style={{
-          marginBottom: 16,
-          background: '#f8fafc',
-          borderRadius: 8,
-          border: '1px solid #e2e8f0',
-        }}
+        style={{ marginBottom: 16, borderRadius: 8, border: '1px solid #334155', background: '#0f172a' }}
       >
         <pre
           style={{
@@ -100,16 +86,15 @@ const CodeReview: React.FC<Props> = ({
             margin: 0,
             whiteSpace: 'pre-wrap',
             wordBreak: 'break-all',
-            color: '#1e293b',
+            color: '#e2e8f0',
           }}
         >
           {tfContent || '# 销毁模式：使用已有资源状态'}
         </pre>
       </Card>
 
-      {/* Plan 日志 */}
       <div style={{ marginBottom: 8 }}>
-        <Text strong style={{ fontSize: 13, color: '#374151' }}>
+        <Text strong style={{ fontSize: 13, color: '#94a3b8' }}>
           Terraform Plan 输出
         </Text>
       </div>
@@ -123,9 +108,9 @@ const CodeReview: React.FC<Props> = ({
       {planDone && (
         <Alert
           type="success"
-          message="Plan 执行完成，请确认后继续"
+          message={<span style={{ color: '#86efac' }}>Plan 执行完成，请确认后继续</span>}
           showIcon
-          style={{ marginTop: 16, borderRadius: 6 }}
+          style={{ marginTop: 16, borderRadius: 8, background: '#022c22', border: '1px solid #065f46' }}
         />
       )}
 
@@ -136,7 +121,7 @@ const CodeReview: React.FC<Props> = ({
             size="large"
             onClick={startPlan}
             loading={planning}
-            style={{ borderRadius: 6, minWidth: 140 }}
+            style={{ borderRadius: 8, minWidth: 140, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', border: 'none' }}
           >
             执行 Plan
           </Button>
@@ -145,16 +130,12 @@ const CodeReview: React.FC<Props> = ({
             type="primary"
             size="large"
             onClick={handleConfirm}
-            style={{ borderRadius: 6, minWidth: 140 }}
+            style={{ borderRadius: 8, minWidth: 140, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', border: 'none' }}
           >
             确认，下一步
           </Button>
         )}
-        <Button
-          onClick={onBack}
-          disabled={planning}
-          style={{ borderRadius: 6 }}
-        >
+        <Button onClick={onBack} disabled={planning} style={{ borderRadius: 8 }}>
           返回上一步
         </Button>
       </Space>

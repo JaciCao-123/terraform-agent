@@ -16,6 +16,12 @@ interface Props {
   onBack: () => void
 }
 
+const cardStyle = {
+  borderRadius: 14,
+  border: '1px solid #334155',
+  background: 'linear-gradient(135deg, #1e293b 0%, #1a2332 100%)',
+}
+
 const ExecutionPanel: React.FC<Props> = ({
   tfContent,
   operationType,
@@ -30,18 +36,13 @@ const ExecutionPanel: React.FC<Props> = ({
   const [applyDone, setApplyDone] = useState(false)
 
   const handleMessage = useCallback((msg: SSEMessage) => {
-    if (msg.log) {
-      setApplyLogs((prev) => [...prev, msg.log!])
-    }
+    if (msg.log) setApplyLogs((prev) => [...prev, msg.log!])
   }, [])
 
-  const handleApplyError = useCallback(
-    (err: Error) => {
-      setApplying(false)
-      onError(err.message)
-    },
-    [onError],
-  )
+  const handleApplyError = useCallback((err: Error) => {
+    setApplying(false)
+    onError(err.message)
+  }, [onError])
 
   const handleApplyComplete = useCallback(() => {
     setApplying(false)
@@ -53,7 +54,6 @@ const ExecutionPanel: React.FC<Props> = ({
     setApplying(true)
     setApplyLogs([])
     setApplyDone(false)
-
     if (operationType === 'create' || operationType === 'update') {
       executeApply(tfContent, resourceType, '', handleMessage, handleApplyError, handleApplyComplete)
     } else {
@@ -61,34 +61,25 @@ const ExecutionPanel: React.FC<Props> = ({
     }
   }, [tfContent, resourceType, operationType, targetResourceAddress, handleMessage, handleApplyError, handleApplyComplete])
 
-  const handleFinish = () => {
-    onApplyComplete(applyLogs)
-  }
+  const handleFinish = () => onApplyComplete(applyLogs)
 
   return (
-    <Card
-      style={{
-        borderRadius: 12,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-      }}
-    >
-      <Title level={4} style={{ marginBottom: 24 }}>
-        {operationType === 'create' ? '执行 Terraform Apply' : operationType === 'update' ? '执行 Terraform Apply' : '执行 Terraform Destroy'}
+    <Card style={cardStyle}>
+      <Title level={4} style={{ marginBottom: 24, color: '#f1f5f9', fontSize: 18 }}>
+        {operationType === 'destroy' ? '执行 Terraform Destroy' : '执行 Terraform Apply'}
       </Title>
 
-      {/* 警告 */}
       {operationType === 'destroy' && (
         <Alert
           type="warning"
-          message="销毁操作不可逆，请确认已备份重要数据"
+          message={<span style={{ color: '#fbbf24' }}>销毁操作不可逆，请确认已备份重要数据</span>}
           showIcon
-          style={{ marginBottom: 16, borderRadius: 6 }}
+          style={{ marginBottom: 16, borderRadius: 8, background: '#1f1313', border: '1px solid #7f1d1d' }}
         />
       )}
 
-      {/* 执行日志 */}
       <div style={{ marginBottom: 8 }}>
-        <strong style={{ fontSize: 13, color: '#374151' }}>
+        <strong style={{ fontSize: 13, color: '#94a3b8' }}>
           {operationType === 'destroy' ? 'Terraform Destroy' : 'Terraform Apply'} 执行日志
         </strong>
       </div>
@@ -96,16 +87,16 @@ const ExecutionPanel: React.FC<Props> = ({
         logs={applyLogs}
         loading={applying}
         loadingText={`正在执行 terraform ${operationType}...`}
-        placeholder={`点击下方按钮开始执行`}
+        placeholder="点击下方按钮开始执行"
         maxHeight={450}
       />
 
       {applyDone && (
         <Alert
           type="success"
-          message={`${operationType === 'create' ? 'Create' : operationType === 'update' ? 'Update' : 'Destroy'} 执行完成`}
+          message={<span style={{ color: '#86efac' }}>{`${operationType === 'create' ? 'Create' : operationType === 'update' ? 'Update' : 'Destroy'} 执行完成`}</span>}
           showIcon
-          style={{ marginTop: 16, borderRadius: 6 }}
+          style={{ marginTop: 16, borderRadius: 8, background: '#022c22', border: '1px solid #065f46' }}
         />
       )}
 
@@ -116,7 +107,7 @@ const ExecutionPanel: React.FC<Props> = ({
             size="large"
             onClick={startApply}
             loading={applying}
-            style={{ borderRadius: 6, minWidth: 140 }}
+            style={{ borderRadius: 8, minWidth: 140, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', border: 'none' }}
           >
             {operationType === 'destroy' ? '开始执行 Destroy' : '开始执行 Apply'}
           </Button>
@@ -125,16 +116,12 @@ const ExecutionPanel: React.FC<Props> = ({
             type="primary"
             size="large"
             onClick={handleFinish}
-            style={{ borderRadius: 6, minWidth: 140 }}
+            style={{ borderRadius: 8, minWidth: 140, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', border: 'none' }}
           >
             查看结果
           </Button>
         )}
-        <Button
-          onClick={onBack}
-          disabled={applying}
-          style={{ borderRadius: 6 }}
-        >
+        <Button onClick={onBack} disabled={applying} style={{ borderRadius: 8 }}>
           返回上一步
         </Button>
       </Space>
