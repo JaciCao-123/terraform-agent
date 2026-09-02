@@ -32,7 +32,14 @@ def build_terraform_generation_prompt(
         ),
     }
 
-    extra_rules = resource_rules.get(resource_type, "")
+    # 通用规则 - 所有资源类型都适用
+    common_rules = (
+        "- 严禁在 resource 块中使用 region 参数！region 由 provider 级别配置，不要在资源中指定\n"
+        "- 只使用下方 Schema 中列出的 terraform_resource 类型，严禁自行编造不存在的资源类型\n"
+        "- 每个资源块只使用该资源类型实际支持的参数，不要添加任何不存在的参数\n"
+    )
+
+    extra_rules = common_rules + resource_rules.get(resource_type, "")
 
     # 更新操作的特殊规则
     if action == "update":
@@ -100,12 +107,11 @@ def build_terraform_fix_prompt(
     system_prompt = (
         "你是一个 Terraform 配置修复专家。\n"
         "用户提供的 Terraform 配置在执行时出错，请分析错误并修复代码。\n"
-        "只输出修正后的纯 HCL 代码，不要包含任何解释。"
-    )
-    user_prompt = (
-        f"以下 Terraform 配置执行失败：\n\n{tf_content}\n\n"
-        f"错误信息：\n{error_log}\n\n"
-        f"请修复代码并只输出修正后的 HCL 代码。"
+        "只输出修正后的纯 HCL 代码，不要包含任何解释。\n"
+        "重要规则：\n"
+        "- 严禁在 resource 块中使用 region 参数！region 由 provider 级别配置\n"
+        "- 只使用真实存在的资源类型，严禁编造不存在的资源类型\n"
+        "- 每个资源块只使用该资源实际支持的参数，不要添加不存在的参数\n"
     )
     return system_prompt, user_prompt
 
