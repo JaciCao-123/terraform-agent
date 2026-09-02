@@ -37,7 +37,7 @@ const ExecutionPanel: React.FC<Props> = ({
 
   const handleMessage = useCallback((msg: SSEMessage) => {
     if (msg.log) {
-      setApplyLogs((prev) => [...prev, msg.log])
+      setApplyLogs((prev) => [...prev, msg.log!])
     }
   }, [])
 
