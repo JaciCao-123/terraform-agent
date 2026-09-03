@@ -1,0 +1,50 @@
+{
+  "resource_type": "redis_cache",
+  "terraform_resource": "azurerm_redis_cache",
+  "display_name": "Redis 缓存 Azure Cache for Redis",
+  "description": "Azure Redis 缓存服务，提供高性能的内存数据缓存",
+  "core_params": [
+    {
+      "name": "name",
+      "label": "缓存名称",
+      "type": "string",
+      "required": true,
+      "description": "Redis 缓存实例的名称"
+    },
+    {
+      "name": "resource_group_name",
+      "label": "资源组名称",
+      "type": "string",
+      "required": true,
+      "description": "所属资源组的名称"
+    },
+    {
+      "name": "capacity",
+      "label": "容量",
+      "type": "number",
+      "required": true,
+      "default": 1,
+      "min": 0,
+      "max": 6,
+      "description": "Redis 缓存实例的容量大小 (0-6)"
+    },
+    {
+      "name": "family",
+      "label": "系列",
+      "type": "select",
+      "required": true,
+      "default": "C",
+      "options": ["C", "P"],
+      "description": "Redis 缓存的 SKU 系列 (C=标准, P=高级)"
+    },
+    {
+      "name": "sku_name",
+      "label": "SKU 规格",
+      "type": "select",
+      "required": true,
+      "default": "Standard",
+      "options": ["Basic", "Standard", "Premium"],
+      "description": "Redis 缓存的 SKU 规格"
+    }
+  ]
+}

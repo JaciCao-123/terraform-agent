@@ -24,20 +24,24 @@ def get_tf_manager() -> TerraformManager:
 class PlanRequest(BaseModel):
     tf_content: str
     resource_type: str
+    provider: str = "alicloud"
 
 
 class ApplyRequest(BaseModel):
     tf_content: str
     resource_type: str
     plan_result: str = ""
+    provider: str = "alicloud"
 
 
 class DestroyPlanRequest(BaseModel):
     resource_address: str
+    provider: str = "alicloud"
 
 
 class DestroyApplyRequest(BaseModel):
     resource_address: str
+    provider: str = "alicloud"
 
 
 async def _stream_generator(async_gen):
@@ -55,11 +59,9 @@ async def _stream_generator_with_fix(tf_manager, async_gen):
     try:
         async for line in async_gen:
             yield f"data: {json.dumps({'log': line})}\n\n"
-        # 如果有自动修复后的代码，发送给前端
         if tf_manager._latest_fixed_tf is not None:
-            yield f"data: {json.dumps({{'fixed_tf': tf_manager._latest_fixed_tf}})}\n\n"
+            yield f"data: {json.dumps({'fixed_tf': tf_manager._latest_fixed_tf})}\n\n"
         yield "data: {\"status\": \"completed\"}\n\n"
-        # 清理
         tf_manager._latest_fixed_tf = None
     except Exception as e:
         yield f"data: {json.dumps({'status': 'error', 'error': str(e)})}\n\n"
@@ -74,7 +76,7 @@ async def execute_plan(req: PlanRequest):
     tf_manager = get_tf_manager()
 
     return StreamingResponse(
-        _stream_generator_with_fix(tf_manager, tf_manager.plan(req.tf_content, req.resource_type)),
+        _stream_generator_with_fix(tf_manager, tf_manager.plan(req.tf_content, req.resource_type, req.provider)),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
@@ -91,7 +93,7 @@ async def execute_apply(req: ApplyRequest):
         raise HTTPException(status_code=400, detail="Terraform 配置不能为空")
 
     return StreamingResponse(
-        _stream_generator(get_tf_manager().apply(req.tf_content)),
+        _stream_generator(get_tf_manager().apply(req.tf_content, req.provider)),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
@@ -105,7 +107,7 @@ async def execute_apply(req: ApplyRequest):
 async def execute_plan_destroy(req: DestroyPlanRequest):
     """执行 terraform plan -destroy，SSE 流式返回日志"""
     return StreamingResponse(
-        _stream_generator(get_tf_manager().plan_destroy(req.resource_address)),
+        _stream_generator(get_tf_manager().plan_destroy(req.resource_address, req.provider)),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
@@ -119,7 +121,7 @@ async def execute_plan_destroy(req: DestroyPlanRequest):
 async def execute_destroy(req: DestroyApplyRequest):
     """执行 terraform destroy，SSE 流式返回日志"""
     return StreamingResponse(
-        _stream_generator(get_tf_manager().destroy(req.resource_address)),
+        _stream_generator(get_tf_manager().destroy(req.resource_address, req.provider)),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

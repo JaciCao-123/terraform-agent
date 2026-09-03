@@ -22,6 +22,7 @@ def get_tf_manager() -> TerraformManager:
 class GenerateRequest(BaseModel):
     resource_type: str
     params: dict
+    provider: str = "alicloud"
     user_description: Optional[str] = None
 
 
@@ -33,7 +34,7 @@ class GenerateResponse(BaseModel):
 async def generate_tf(req: GenerateRequest):
     """调用 LLM 生成 Terraform 配置"""
     try:
-        tf_content = await get_tf_manager().generate_tf(req.resource_type, req.params, req.user_description)
+        tf_content = await get_tf_manager().generate_tf(req.resource_type, req.params, req.provider, req.user_description)
         return GenerateResponse(tf_content=tf_content)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -43,6 +44,7 @@ async def generate_tf(req: GenerateRequest):
 
 class GenerateDestroyRequest(BaseModel):
     resource_address: str
+    provider: str = "alicloud"
     user_description: Optional[str] = None
 
 
@@ -50,7 +52,7 @@ class GenerateDestroyRequest(BaseModel):
 async def generate_destroy_tf(req: GenerateDestroyRequest):
     """生成销毁指定资源的 Terraform 配置"""
     try:
-        tf_content = await get_tf_manager().generate_destroy_tf(req.resource_address, req.user_description)
+        tf_content = await get_tf_manager().generate_destroy_tf(req.resource_address, req.provider, req.user_description)
         return GenerateResponse(tf_content=tf_content)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"生成失败: {str(e)}")
@@ -60,6 +62,7 @@ class GenerateUpdateRequest(BaseModel):
     resource_type: str
     resource_address: str
     params: dict
+    provider: str = "alicloud"
     user_description: Optional[str] = None
 
 
@@ -68,7 +71,7 @@ async def generate_update_tf(req: GenerateUpdateRequest):
     """生成更新已有资源的 Terraform 配置"""
     try:
         tf_content = await get_tf_manager().generate_update_tf(
-            req.resource_type, req.resource_address, req.params, req.user_description
+            req.resource_type, req.resource_address, req.params, req.provider, req.user_description
         )
         return GenerateResponse(tf_content=tf_content)
     except Exception as e:
@@ -96,7 +99,7 @@ async def fix_tf(req: FixRequest):
 
 class AnalyzeErrorRequest(BaseModel):
     error_log: str
-    action: str  # "plan" | "apply" | "destroy"
+    action: str
 
 
 class AnalyzeErrorResponse(BaseModel):

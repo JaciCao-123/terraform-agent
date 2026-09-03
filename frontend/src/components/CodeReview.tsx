@@ -3,7 +3,7 @@ import { Card, Button, Typography, Alert, Space, Tag, Tooltip, Input } from 'ant
 import { EditOutlined, EyeOutlined, SaveOutlined, ThunderboltOutlined } from '@ant-design/icons'
 import { executePlan, executePlanDestroy } from '../services/api'
 import TerminalView from './TerminalView'
-import type { OperationType, SSEMessage } from '../types'
+import type { OperationType, SSEMessage, CloudProvider } from '../types'
 
 const { Title, Text } = Typography
 const { TextArea } = Input
@@ -13,6 +13,7 @@ interface Props {
   operationType: OperationType
   resourceType: string
   targetResourceAddress: string
+  provider: CloudProvider
   onPlanComplete: (logs: string[], finalTf?: string) => void
   onError: (error: string) => void
   onBack: () => void
@@ -29,6 +30,7 @@ const CodeReview: React.FC<Props> = ({
   operationType,
   resourceType,
   targetResourceAddress,
+  provider,
   onPlanComplete,
   onError,
   onBack,
@@ -75,11 +77,11 @@ const CodeReview: React.FC<Props> = ({
     setPlanLogs([])
     setPlanDone(false)
     if (operationType === 'create' || operationType === 'update') {
-      executePlan(editableContent, resourceType, handleMessage, handlePlanError, handlePlanComplete)
+      executePlan(editableContent, resourceType, handleMessage, handlePlanError, handlePlanComplete, provider)
     } else {
-      executePlanDestroy(targetResourceAddress, handleMessage, handlePlanError, handlePlanComplete)
+      executePlanDestroy(targetResourceAddress, handleMessage, handlePlanError, handlePlanComplete, provider)
     }
-  }, [editableContent, resourceType, operationType, targetResourceAddress, handleMessage, handlePlanError, handlePlanComplete])
+  }, [editableContent, resourceType, operationType, targetResourceAddress, provider, handleMessage, handlePlanError, handlePlanComplete])
 
   const handleConfirm = () => onPlanComplete(planLogs, editableContent)
 

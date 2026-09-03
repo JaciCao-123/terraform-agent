@@ -1,0 +1,41 @@
+{
+  "resource_type": "storage_account",
+  "terraform_resource": "azurerm_storage_account",
+  "display_name": "存储账户 Storage Account",
+  "description": "Azure 存储账户，提供 Blob、File、Queue、Table 存储服务",
+  "core_params": [
+    {
+      "name": "name",
+      "label": "存储账户名称",
+      "type": "string",
+      "required": true,
+      "pattern": "^[a-z0-9]{3,24}$",
+      "description": "存储账户名称，3-24 个字符，只能包含小写字母和数字"
+    },
+    {
+      "name": "resource_group_name",
+      "label": "资源组名称",
+      "type": "string",
+      "required": true,
+      "description": "所属资源组的名称"
+    },
+    {
+      "name": "account_tier",
+      "label": "账户层级",
+      "type": "select",
+      "required": true,
+      "default": "Standard",
+      "options": ["Standard", "Premium"],
+      "description": "存储账户的性能层级"
+    },
+    {
+      "name": "account_replication_type",
+      "label": "复制类型",
+      "type": "select",
+      "required": true,
+      "default": "LRS",
+      "options": ["LRS", "GRS", "RA-GRS", "ZRS"],
+      "description": "存储账户的数据复制策略"
+    }
+  ]
+}

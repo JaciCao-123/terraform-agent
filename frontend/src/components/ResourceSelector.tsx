@@ -1,12 +1,18 @@
 import React, { useEffect, useState } from 'react'
 import { Card, Select, Button, Space, Typography, Spin, Empty, Descriptions, Tag, message } from 'antd'
-import { PlusCircleOutlined, DeleteOutlined, ReloadOutlined, EditOutlined, CloudServerOutlined, DatabaseOutlined, NodeIndexOutlined, FolderOpenOutlined, ApartmentOutlined, ThunderboltOutlined, DeploymentUnitOutlined, FileOutlined } from '@ant-design/icons'
+import { PlusCircleOutlined, DeleteOutlined, ReloadOutlined, EditOutlined, CloudServerOutlined, DatabaseOutlined, NodeIndexOutlined, FolderOpenOutlined, ApartmentOutlined, ThunderboltOutlined, DeploymentUnitOutlined, FileOutlined, CloudOutlined, WindowsOutlined } from '@ant-design/icons'
 import { getResourceTypes, getResourceSchema, getResourceInstances } from '../services/api'
-import type { OperationType, ResourceType, ResourceSchema, ResourceInstance } from '../types'
+import type { OperationType, ResourceType, ResourceSchema, ResourceInstance, CloudProvider } from '../types'
 
 const { Title, Text } = Typography
 
+const CLOUD_PROVIDER_ICONS: Record<string, React.ReactNode> = {
+  alicloud: <CloudServerOutlined style={{ fontSize: 24, color: '#ff6a00' }} />,
+  azure: <WindowsOutlined style={{ fontSize: 24, color: '#0078d4' }} />,
+}
+
 const RESOURCE_ICONS: Record<string, React.ReactNode> = {
+  // 阿里云
   ecs: <CloudServerOutlined style={{ fontSize: 28, color: '#2563eb' }} />,
   rds: <DatabaseOutlined style={{ fontSize: 28, color: '#7c3aed' }} />,
   slb: <NodeIndexOutlined style={{ fontSize: 28, color: '#059669' }} />,
@@ -16,9 +22,20 @@ const RESOURCE_ICONS: Record<string, React.ReactNode> = {
   ack: <DeploymentUnitOutlined style={{ fontSize: 28, color: '#10b981' }} />,
   cdn: <FileOutlined style={{ fontSize: 28, color: '#8b5cf6' }} />,
   nas: <FolderOpenOutlined style={{ fontSize: 28, color: '#f59e0b' }} />,
+  // Azure
+  resource_group: <ApartmentOutlined style={{ fontSize: 28, color: '#0078d4' }} />,
+  virtual_network: <ApartmentOutlined style={{ fontSize: 28, color: '#5ea6e8' }} />,
+  virtual_machine: <CloudOutlined style={{ fontSize: 28, color: '#005a9e' }} />,
+  storage_account: <FolderOpenOutlined style={{ fontSize: 28, color: '#25a0ea' }} />,
+  sql_database: <DatabaseOutlined style={{ fontSize: 28, color: '#e52025' }} />,
+  aks: <DeploymentUnitOutlined style={{ fontSize: 28, color: '#32b530' }} />,
+  redis_cache: <ThunderboltOutlined style={{ fontSize: 28, color: '#bc252a' }} />,
+  cdn_profile: <CloudOutlined style={{ fontSize: 28, color: '#0078d4' }} />,
+  app_service: <FileOutlined style={{ fontSize: 28, color: '#512bd4' }} />,
 }
 
 const RESOURCE_CARD_COLORS: Record<string, { bg: string; border: string; selectedBg: string; selectedBorder: string }> = {
+  // 阿里云
   ecs: { bg: '#eff6ff', border: '#bfdbfe', selectedBg: '#dbeafe', selectedBorder: '#2563eb' },
   rds: { bg: '#f5f3ff', border: '#ddd6fe', selectedBg: '#ede9fe', selectedBorder: '#7c3aed' },
   slb: { bg: '#ecfdf5', border: '#a7f3d0', selectedBg: '#d1fae5', selectedBorder: '#059669' },
@@ -28,9 +45,20 @@ const RESOURCE_CARD_COLORS: Record<string, { bg: string; border: string; selecte
   ack: { bg: '#f0fdf4', border: '#bbf7d0', selectedBg: '#dcfce7', selectedBorder: '#10b981' },
   cdn: { bg: '#f5f3ff', border: '#ddd6fe', selectedBg: '#ede9fe', selectedBorder: '#8b5cf6' },
   nas: { bg: '#fffbeb', border: '#fde68a', selectedBg: '#fef3c7', selectedBorder: '#f59e0b' },
+  // Azure
+  resource_group: { bg: '#e6f2ff', border: '#99ccff', selectedBg: '#cce5ff', selectedBorder: '#0078d4' },
+  virtual_network: { bg: '#e6f7ff', border: '#91d5ff', selectedBg: '#cce5ff', selectedBorder: '#5ea6e8' },
+  virtual_machine: { bg: '#f0f7ff', border: '#b3d9ff', selectedBg: '#cce6ff', selectedBorder: '#005a9e' },
+  storage_account: { bg: '#f0f8ff', border: '#91cfff', selectedBg: '#d4eaff', selectedBorder: '#25a0ea' },
+  sql_database: { bg: '#fff0f0', border: '#ffcccc', selectedBg: '#ffe0e0', selectedBorder: '#e52025' },
+  aks: { bg: '#f2fdf4', border: '#a5e9aa', selectedBg: '#d4f8d8', selectedBorder: '#32b530' },
+  redis_cache: { bg: '#fff0f0', border: '#f4cccc', selectedBg: '#fadddd', selectedBorder: '#bc252a' },
+  cdn_profile: { bg: '#f0f5ff', border: '#b3ccff', selectedBg: '#d9e6ff', selectedBorder: '#0078d4' },
+  app_service: { bg: '#f5f0ff', border: '#cbbfff', selectedBg: '#e6dfff', selectedBorder: '#512bd4' },
 }
 
 const RESOURCE_TYPE_LABELS: Record<string, string> = {
+  // 阿里云
   ecs: '云服务器 ECS',
   rds: '云数据库 RDS',
   slb: '负载均衡 SLB',
@@ -40,15 +68,26 @@ const RESOURCE_TYPE_LABELS: Record<string, string> = {
   ack: '容器服务 ACK',
   cdn: '内容分发 CDN',
   nas: '文件存储 NAS',
+  // Azure
+  resource_group: '资源组',
+  virtual_network: '虚拟网络 VNet',
+  virtual_machine: '虚拟机 VM',
+  storage_account: '存储账户',
+  sql_database: 'SQL Database',
+  aks: 'Kubernetes 服务 AKS',
+  redis_cache: 'Redis 缓存',
+  cdn_profile: 'CDN Profile',
+  app_service: '应用服务 App Service',
 }
 
 interface Props {
   operationType: OperationType
   onOperationTypeChange: (op: OperationType) => void
-  onResourceSelected: (op: OperationType, resType: string, schema: ResourceSchema, targetAddress?: string, resourceId?: string) => void
+  onResourceSelected: (op: OperationType, resType: string, schema: ResourceSchema, provider: CloudProvider, targetAddress?: string, resourceId?: string) => void
 }
 
 const ResourceSelector: React.FC<Props> = ({ operationType, onOperationTypeChange, onResourceSelected }) => {
+  const [cloudProvider, setCloudProvider] = useState<CloudProvider>('alicloud')
   const [resourceTypes, setResourceTypes] = useState<ResourceType[]>([])
   const [instances, setInstances] = useState<ResourceInstance[]>([])
   const [selectedType, setSelectedType] = useState<string | null>(null)
@@ -56,23 +95,33 @@ const ResourceSelector: React.FC<Props> = ({ operationType, onOperationTypeChang
   const [loading, setLoading] = useState(true)
   const [loadingSchema, setLoadingSchema] = useState(false)
 
-  useEffect(() => {
+  const loadResourceTypes = (provider: CloudProvider) => {
     setLoading(true)
-    Promise.all([getResourceTypes(), getResourceInstances()])
+    Promise.all([getResourceTypes(provider), getResourceInstances(provider)])
       .then(([types, insts]) => {
         setResourceTypes(types)
         setInstances(insts)
       })
       .catch((err) => console.error('加载资源类型失败:', err))
       .finally(() => setLoading(false))
-  }, [])
+  }
+
+  useEffect(() => {
+    loadResourceTypes(cloudProvider)
+  }, [cloudProvider])
+
+  const handleProviderChange = (provider: CloudProvider) => {
+    setCloudProvider(provider)
+    setSelectedType(null)
+    setSelectedInstance(null)
+  }
 
   const handleNext = async () => {
     if (operationType === 'create' && selectedType) {
       setLoadingSchema(true)
       try {
-        const schema = await getResourceSchema(selectedType)
-        onResourceSelected('create', selectedType, schema)
+        const schema = await getResourceSchema(selectedType, cloudProvider)
+        onResourceSelected('create', selectedType, schema, cloudProvider)
       } catch (err) {
         console.error('加载 Schema 失败:', err)
       } finally {
@@ -83,8 +132,8 @@ const ResourceSelector: React.FC<Props> = ({ operationType, onOperationTypeChang
       try {
         const instance = instances.find((i) => i.address === selectedInstance)
         if (instance) {
-          const schema = await getResourceSchema(instance.type)
-          onResourceSelected(operationType, instance.type, schema, instance.address, instance.id)
+          const schema = await getResourceSchema(instance.type, cloudProvider)
+          onResourceSelected(operationType, instance.type, schema, cloudProvider, instance.address, instance.id)
         }
       } catch (err) {
         console.error('加载 Schema 失败:', err)
@@ -95,17 +144,8 @@ const ResourceSelector: React.FC<Props> = ({ operationType, onOperationTypeChang
   }
 
   const refreshInstances = () => {
-    setLoading(true)
-    getResourceInstances()
-      .then((insts) => {
-        setInstances(insts)
-        message.success(`刷新成功，共 ${insts.length} 个实例`)
-      })
-      .catch((err) => {
-        console.error('刷新失败:', err)
-        message.error('刷新失败')
-      })
-      .finally(() => setLoading(false))
+    loadResourceTypes(cloudProvider)
+    message.success(`刷新成功，共 ${instances.length} 个实例`)
   }
 
   const selectedInstanceDetail = instances.find((i) => i.address === selectedInstance)
@@ -163,10 +203,45 @@ const ResourceSelector: React.FC<Props> = ({ operationType, onOperationTypeChang
       }}
     >
       <Title level={4} style={{ marginBottom: 24, color: '#1e293b', fontSize: 18 }}>
-        选择操作类型和资源
+        选择云平台、操作类型和资源
       </Title>
 
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        {/* 云平台选择 */}
+        <div>
+          <Text strong style={{ display: 'block', marginBottom: 12, fontSize: 13, color: '#64748b', letterSpacing: 0.5 }}>
+            云平台
+          </Text>
+          <Space size={12}>
+            <Button
+              type={cloudProvider === 'alicloud' ? 'primary' : 'default'}
+              icon={CLOUD_PROVIDER_ICONS.alicloud as React.ReactElement}
+              onClick={() => handleProviderChange('alicloud')}
+              size="large"
+              style={{
+                borderRadius: 8,
+                minWidth: 140,
+                ...(cloudProvider === 'alicloud' && { background: 'linear-gradient(135deg, #ff6a00, #ee0979)', border: 'none', color: '#fff' }),
+              }}
+            >
+              阿里云
+            </Button>
+            <Button
+              type={cloudProvider === 'azure' ? 'primary' : 'default'}
+              icon={CLOUD_PROVIDER_ICONS.azure as React.ReactElement}
+              onClick={() => handleProviderChange('azure')}
+              size="large"
+              style={{
+                borderRadius: 8,
+                minWidth: 140,
+                ...(cloudProvider === 'azure' && { background: 'linear-gradient(135deg, #0078d4, #13a0ff)', border: 'none', color: '#fff' }),
+              }}
+            >
+              Azure
+            </Button>
+          </Space>
+        </div>
+
         {/* 操作类型选择 */}
         <div>
           <Text strong style={{ display: 'block', marginBottom: 12, fontSize: 13, color: '#64748b', letterSpacing: 0.5 }}>
@@ -224,7 +299,7 @@ const ResourceSelector: React.FC<Props> = ({ operationType, onOperationTypeChang
           </Space>
         </div>
 
-        {/* 创建模式 */}
+        {/* 创建模式：选择资源类型 */}
         {operationType === 'create' && (
           <div>
             <Text strong style={{ display: 'block', marginBottom: 12, fontSize: 13, color: '#64748b', letterSpacing: 0.5 }}>
@@ -236,7 +311,7 @@ const ResourceSelector: React.FC<Props> = ({ operationType, onOperationTypeChang
           </div>
         )}
 
-        {/* 销毁/修改模式 */}
+        {/* 销毁/修改模式：选择资源类型 → 选择实例 */}
         {(operationType === 'destroy' || operationType === 'update') && (
           <div>
             <Text strong style={{ display: 'block', marginBottom: 12, fontSize: 13, color: '#64748b', letterSpacing: 0.5 }}>

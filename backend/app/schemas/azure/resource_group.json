@@ -1,0 +1,15 @@
+{
+  "resource_type": "resource_group",
+  "terraform_resource": "azurerm_resource_group",
+  "display_name": "资源组 Resource Group",
+  "description": "Azure 资源组，用于组织和管理 Azure 资源",
+  "core_params": [
+    {
+      "name": "name",
+      "label": "资源组名称",
+      "type": "string",
+      "required": true,
+      "description": "资源组的名称，在订阅内唯一"
+    }
+  ]
+}

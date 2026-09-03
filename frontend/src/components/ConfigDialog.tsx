@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Card, Form, Input, InputNumber, Select, Button, Typography, message, Spin, Alert, Space } from 'antd'
 import { EditOutlined, ThunderboltOutlined } from '@ant-design/icons'
 import { generateTf, generateDestroyTf, generateUpdateTf, getResourceConfig } from '../services/api'
-import type { OperationType, ResourceSchema } from '../types'
+import type { OperationType, ResourceSchema, CloudProvider } from '../types'
 
 const { Title, Text } = Typography
 const { TextArea } = Input
@@ -13,6 +13,7 @@ interface Props {
   schema: ResourceSchema
   resourceType: string | null
   resourceId: string
+  provider: CloudProvider
   targetResourceAddress?: string
   onComplete: (params: Record<string, unknown>, tfContent: string) => void
   onBack: () => void
@@ -24,7 +25,7 @@ const cardStyle = {
   boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
 }
 
-const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, resourceId, targetResourceAddress, onComplete, onBack }) => {
+const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, resourceId, provider, targetResourceAddress, onComplete, onBack }) => {
   const [form] = Form.useForm()
   const [generating, setGenerating] = useState(false)
   const [loadingConfig, setLoadingConfig] = useState(false)
@@ -65,6 +66,7 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
       const result = await generateTf({
         resource_type: schema.resource_type,
         params,
+        provider,
         user_description: userDescription || undefined,
       })
       setGeneratedTf(result.tf_content)
@@ -81,7 +83,7 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
       const values = await form.validateFields()
       setGenerating(true)
       const params = values as Record<string, unknown>
-      const result = await generateUpdateTf(schema.resource_type, targetResourceAddress || '', params, userDescription || undefined)
+      const result = await generateUpdateTf(schema.resource_type, targetResourceAddress || '', params, provider, userDescription || undefined)
       setGeneratedTf(result.tf_content)
       message.success(userDescription ? '结合自然语言描述，更新配置已生成' : '更新配置已生成')
     } catch (err: unknown) {
@@ -95,7 +97,7 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
     if (!targetResourceAddress) return
     setGenerating(true)
     try {
-      const result = await generateDestroyTf(targetResourceAddress, userDescription || undefined)
+      const result = await generateDestroyTf(targetResourceAddress, provider, userDescription || undefined)
       setGeneratedTf(result.tf_content)
       if (!result.tf_content) {
         message.info('使用 terraform state 直接销毁，无需额外配置')

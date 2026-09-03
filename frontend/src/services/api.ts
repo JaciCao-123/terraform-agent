@@ -9,6 +9,7 @@ import type {
   GenerateRequest,
   GenerateResponse,
   SSEMessage,
+  CloudProvider,
 } from '../types'
 
 const API_BASE = '/api'
@@ -26,19 +27,22 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 /** 获取支持的资源类型列表 */
-export async function getResourceTypes(): Promise<ResourceType[]> {
-  const data = await request<{ resource_types: ResourceType[] }>('/resources/types')
+export async function getResourceTypes(provider?: CloudProvider): Promise<ResourceType[]> {
+  const params = provider ? `?provider=${provider}` : ''
+  const data = await request<{ resource_types: ResourceType[] }>(`/resources/types${params}`)
   return data.resource_types
 }
 
 /** 获取指定资源类型的 Schema */
-export async function getResourceSchema(type: string): Promise<ResourceSchema> {
-  return request<ResourceSchema>(`/resources/types/${type}/schema`)
+export async function getResourceSchema(type: string, provider?: CloudProvider): Promise<ResourceSchema> {
+  const params = provider ? `?provider=${provider}` : ''
+  return request<ResourceSchema>(`/resources/types/${type}/schema${params}`)
 }
 
 /** 获取已创建的资源实例列表 */
-export async function getResourceInstances(): Promise<ResourceInstance[]> {
-  const data = await request<{ instances: ResourceInstance[] }>('/resources/instances')
+export async function getResourceInstances(provider?: CloudProvider): Promise<ResourceInstance[]> {
+  const params = provider ? `?provider=${provider}` : ''
+  const data = await request<{ instances: ResourceInstance[] }>(`/resources/instances${params}`)
   return data.instances
 }
 
@@ -50,21 +54,11 @@ export async function generateTf(req: GenerateRequest): Promise<GenerateResponse
   })
 }
 
-/** 调用 LLM 生成 Terraform 配置（含自然语言描述） */
-export async function generateTfWithDescription(
-  req: GenerateRequest & { user_description: string }
-): Promise<GenerateResponse> {
-  return request<GenerateResponse>('/llm/generate', {
-    method: 'POST',
-    body: JSON.stringify(req),
-  })
-}
-
 /** 调用 LLM 生成销毁用的 Terraform 配置 */
-export async function generateDestroyTf(resource_address: string, user_description?: string): Promise<GenerateResponse> {
+export async function generateDestroyTf(resource_address: string, provider?: CloudProvider, user_description?: string): Promise<GenerateResponse> {
   return request<GenerateResponse>('/llm/generate-destroy', {
     method: 'POST',
-    body: JSON.stringify({ resource_address, user_description }),
+    body: JSON.stringify({ resource_address, provider, user_description }),
   })
 }
 
@@ -73,11 +67,12 @@ export async function generateUpdateTf(
   resource_type: string,
   resource_address: string,
   params: Record<string, unknown>,
+  provider?: CloudProvider,
   user_description?: string,
 ): Promise<GenerateResponse> {
   return request<GenerateResponse>('/llm/generate-update', {
     method: 'POST',
-    body: JSON.stringify({ resource_type, resource_address, params, user_description }),
+    body: JSON.stringify({ resource_type, resource_address, params, provider, user_description }),
   })
 }
 
@@ -113,8 +108,9 @@ export function executePlan(
   onMessage: (msg: SSEMessage) => void,
   onError: (err: Error) => void,
   onComplete: (fixedTf?: string) => void,
+  provider?: CloudProvider,
 ): () => void {
-  return startSSE('/execute/plan', { tf_content: tfContent, resource_type: resourceType }, onMessage, onError, onComplete)
+  return startSSE('/execute/plan', { tf_content: tfContent, resource_type: resourceType, provider }, onMessage, onError, onComplete)
 }
 
 /** 执行 terraform apply（SSE 流） */
@@ -125,8 +121,9 @@ export function executeApply(
   onMessage: (msg: SSEMessage) => void,
   onError: (err: Error) => void,
   onComplete: () => void,
+  provider?: CloudProvider,
 ): () => void {
-  return startSSE('/execute/apply', { tf_content: tfContent, resource_type: resourceType, plan_result: planResult }, onMessage, onError, onComplete)
+  return startSSE('/execute/apply', { tf_content: tfContent, resource_type: resourceType, plan_result: planResult, provider }, onMessage, onError, onComplete)
 }
 
 /** 执行 terraform plan -destroy（SSE 流） */
@@ -135,8 +132,9 @@ export function executePlanDestroy(
   onMessage: (msg: SSEMessage) => void,
   onError: (err: Error) => void,
   onComplete: () => void,
+  provider?: CloudProvider,
 ): () => void {
-  return startSSE('/execute/plan-destroy', { resource_address: resourceAddress }, onMessage, onError, onComplete)
+  return startSSE('/execute/plan-destroy', { resource_address: resourceAddress, provider }, onMessage, onError, onComplete)
 }
 
 /** 执行 terraform destroy（SSE 流） */
@@ -145,8 +143,9 @@ export function executeDestroy(
   onMessage: (msg: SSEMessage) => void,
   onError: (err: Error) => void,
   onComplete: () => void,
+  provider?: CloudProvider,
 ): () => void {
-  return startSSE('/execute/destroy', { resource_address: resourceAddress }, onMessage, onError, onComplete)
+  return startSSE('/execute/destroy', { resource_address: resourceAddress, provider }, onMessage, onError, onComplete)
 }
 
 /** SSE 通用函数 */

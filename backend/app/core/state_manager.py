@@ -1,11 +1,10 @@
-"""状态文件管理：从 OSS 远程状态读取已创建资源列表"""
+"""状态文件管理：从远程状态读取已创建资源列表"""
 
 import base64
 import hashlib
 import hmac
 import json
 import os
-import tempfile
 import urllib.request
 from datetime import datetime
 from typing import Optional
@@ -13,29 +12,29 @@ from typing import Optional
 from app.config import settings
 from app.core.terraform_manager import TerraformManager
 
+
 class StateManager:
     """管理 Terraform 状态文件和资源列表"""
 
     RESOURCE_TYPE_MAP = TerraformManager.RESOURCE_TYPE_MAP
-    TERRAFORM_TO_RESOURCE_TYPE = {v: k for k, v in RESOURCE_TYPE_MAP.items()}
+    TERRAFORM_TO_RESOURCE_TYPE = {}
+    for provider_map in RESOURCE_TYPE_MAP.values():
+        TERRAFORM_TO_RESOURCE_TYPE.update({v: k for k, v in provider_map.items()})
 
-    def get_resource_list(self) -> list[dict]:
+    def get_resource_list(self, provider: str = "alicloud") -> list[dict]:
         """
-        从 OSS 远程状态获取已创建资源列表。
+        从远程状态获取已创建资源列表。
 
-        返回格式:
-        [
-            {
-                "id": "i-xxx",
-                "type": "ecs",
-                "name": "my-instance",
-                "address": "alicloud_instance.my-instance",
-                "provider": "provider[\"registry.terraform.io/hashicorp/alicloud\"]"
-            },
-            ...
-        ]
+        Args:
+            provider: 云平台 "alicloud" | "azure"
         """
-        state = self._fetch_remote_state()
+        if provider == "alicloud":
+            state = self._fetch_oss_state()
+        elif provider == "azure":
+            state = self._fetch_azure_state()
+        else:
+            return []
+
         if state:
             return self._parse_state_resources(state)
 
@@ -54,11 +53,10 @@ class StateManager:
                 return r
         return None
 
-    # ── OSS 远程状态读取 ──────────────────────────────────
+    # ── OSS 远程状态读取（阿里云） ──────────────────────
 
-    def _fetch_remote_state(self) -> Optional[dict]:
-        """从 OSS 下载 terraform.tfstate 文件"""
-        # OSS 后端默认路径: {prefix}terraform.tfstate（默认 workspace 无子目录）
+    def _fetch_oss_state(self) -> Optional[dict]:
+        """从阿里云 OSS 下载 terraform.tfstate 文件"""
         state_key = f"{settings.oss_state_prefix}terraform.tfstate"
         url = f"https://{settings.oss_bucket}.oss-{settings.alicloud_region}.aliyuncs.com/{state_key}"
 
@@ -71,7 +69,6 @@ class StateManager:
                 return json.loads(data)
         except urllib.error.HTTPError as e:
             if e.code == 404:
-                # 状态文件还不存在（首次使用）
                 return None
             print(f"[WARN] OSS 状态文件读取失败 (HTTP {e.code}): {e.reason}")
             return None
@@ -80,11 +77,7 @@ class StateManager:
             return None
 
     def _sign_oss_request(self, req: urllib.request.Request, resource_path: str):
-        """为 OSS 请求添加 Authorization 签名头
-
-        OSS 认证方式: Authorization = "OSS " + AccessKeyId + ":" + Signature
-        Signature = base64(hmac-sha1(AccessKeySecret, VERB + "\n\n\n" + Date + "\n" + "/" + Bucket + "/" + ObjectKey))
-        """
+        """为 OSS 请求添加 Authorization 签名头"""
         access_key = settings.alicloud_access_key
         secret_key = settings.alicloud_secret_key
 
@@ -100,7 +93,34 @@ class StateManager:
 
         req.add_header("Authorization", f"OSS {access_key}:{signature}")
 
-    # ── 本地状态文件读取（兜底） ────────────────────────────
+    # ── Azure Storage Blob 状态读取 ─────────────────────
+
+    def _fetch_azure_state(self) -> Optional[dict]:
+        """从 Azure Storage Blob 下载 terraform.tfstate 文件"""
+        if not settings.azure_storage_account:
+            print("[WARN] Azure Storage Account 未配置")
+            return None
+
+        account = settings.azure_storage_account
+        container = settings.azure_storage_container
+        blob_name = "terraform.tfstate"
+        url = f"https://{account}.blob.core.windows.net/{container}/{blob_name}"
+
+        try:
+            req = urllib.request.Request(url, method="GET")
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                data = resp.read().decode("utf-8")
+                return json.loads(data)
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                return None
+            print(f"[WARN] Azure state 读取失败 (HTTP {e.code}): {e.reason}")
+            return None
+        except Exception as e:
+            print(f"[WARN] Azure state 读取异常: {e}")
+            return None
+
+    # ── 本地状态文件读取（兜底） ─────────────────────────
 
     def _read_local_state(self) -> Optional[dict]:
         """读取本地的 terraform.tfstate 文件"""
@@ -113,15 +133,10 @@ class StateManager:
                 return None
         return None
 
-    # ── 状态文件解析 ──────────────────────────────────────
+    # ── 状态文件解析 ────────────────────────────────────
 
     def _parse_state_resources(self, state: dict) -> list[dict]:
-        """解析 state 文件中的资源列表
-
-        支持 terraform 0.12+ 格式 (values.root_module.resources)
-        和新版格式 (resources[])
-        和 0.12- 格式 (modules.resources)
-        """
+        """解析 state 文件中的资源列表"""
         resources = []
 
         # 新版格式: state["resources"]
@@ -149,13 +164,12 @@ class StateManager:
                 res_address = f"{res_type}.{res_name}"
 
                 if res_type in self.TERRAFORM_TO_RESOURCE_TYPE:
-                    # 获取资源 ID 和更多信息
                     values = res.get("values", {}) or {}
                     resources.append(self._make_resource_entry(res_type, res_name, res_address, values, res.get("provider", "")))
         except (KeyError, TypeError, AttributeError):
             pass
 
-        # 处理子模块 (child_modules)
+        # 处理子模块
         try:
             root_module = state.get("values", {}).get("root_module", {})
             for child in root_module.get("child_modules", []):
@@ -182,7 +196,7 @@ class StateManager:
             except (KeyError, TypeError, AttributeError):
                 pass
 
-        # 去重（同一个地址只保留一个）
+        # 去重
         seen = set()
         unique = []
         for r in resources:
@@ -206,9 +220,8 @@ class StateManager:
         return result
 
     def _make_resource_entry(self, res_type: str, res_name: str, res_address: str, values: dict, provider: str) -> dict:
-        """统一构建资源条目，自动计算 display_name"""
+        """统一构建资源条目"""
         resource_id = values.get("id", res_address)
-        # 当 Terraform 资源名是 "this" 等通用名称时，使用实际资源 ID 作为显示名
         if res_name in ("this", "main", "default") or res_name == res_type.split("_")[-1]:
             display_name = resource_id
         else:
@@ -226,6 +239,7 @@ class StateManager:
     def _extract_resource_detail(self, res_type: str, values: dict) -> dict:
         """提取资源的核心信息用于前端展示"""
         detail = {}
+        # 阿里云资源
         if res_type == "alicloud_instance":
             detail["instance_type"] = values.get("instance_type", "")
             detail["status"] = values.get("status", "")
@@ -252,4 +266,27 @@ class StateManager:
         elif res_type == "alicloud_nas_file_system":
             detail["file_system_type"] = values.get("file_system_type", "")
             detail["protocol_type"] = values.get("protocol_type", "")
+        # Azure 资源
+        elif res_type == "azurerm_resource_group":
+            detail["location"] = values.get("location", "")
+        elif res_type == "azurerm_virtual_network":
+            detail["address_space"] = values.get("address_space", [])
+        elif res_type == "azurerm_linux_virtual_machine":
+            detail["size"] = values.get("size", "")
+            detail["admin_username"] = values.get("admin_username", "")
+        elif res_type == "azurerm_storage_account":
+            detail["account_tier"] = values.get("account_tier", "")
+            detail["account_replication_type"] = values.get("account_replication_type", "")
+        elif res_type == "azurerm_mssql_database":
+            detail["sku_name"] = values.get("sku_name", "")
+        elif res_type == "azurerm_kubernetes_cluster":
+            detail["node_count"] = values.get("node_count", "")
+            detail["dns_prefix"] = values.get("dns_prefix", "")
+        elif res_type == "azurerm_redis_cache":
+            detail["sku_name"] = values.get("sku_name", "")
+            detail["capacity"] = values.get("capacity", "")
+        elif res_type == "azurerm_cdn_profile":
+            detail["sku"] = values.get("sku", "")
+        elif res_type == "azurerm_app_service":
+            detail["location"] = values.get("location", "")
         return detail

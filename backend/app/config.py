@@ -31,6 +31,17 @@ class Settings(BaseSettings):
     oss_state_prefix: str = "terraform/state/"
     oss_log_prefix: str = "terraform/logs/"
 
+    # Azure 凭据
+    arm_client_id: str = ""
+    arm_client_secret: str = ""
+    arm_subscription_id: str = ""
+    arm_tenant_id: str = ""
+    arm_location: str = "eastasia"
+
+    # Azure 状态后端
+    azure_storage_account: str = ""
+    azure_storage_container: str = "tfstate"
+
     # 后端服务配置
     host: str = "0.0.0.0"
     port: int = 8000

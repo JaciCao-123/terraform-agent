@@ -1,0 +1,38 @@
+{
+  "resource_type": "sql_database",
+  "terraform_resource": "azurerm_mssql_database",
+  "display_name": "SQL 数据库 SQL Database",
+  "description": "Azure SQL 数据库，托管的关系型数据库服务",
+  "core_params": [
+    {
+      "name": "name",
+      "label": "数据库名称",
+      "type": "string",
+      "required": true,
+      "description": "SQL 数据库的名称"
+    },
+    {
+      "name": "server_name",
+      "label": "SQL Server 名称",
+      "type": "string",
+      "required": true,
+      "description": "承载数据库的 SQL Server 名称"
+    },
+    {
+      "name": "resource_group_name",
+      "label": "资源组名称",
+      "type": "string",
+      "required": true,
+      "description": "所属资源组的名称"
+    },
+    {
+      "name": "sku_name",
+      "label": "SKU 规格",
+      "type": "select",
+      "required": true,
+      "default": "S0",
+      "options": ["S0", "S1", "S2", "S3", "GP_Gen5_2", "GP_Gen5_4"],
+      "description": "数据库的 SKU 规格"
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "resource_type": "aks",
+  "terraform_resource": "azurerm_kubernetes_cluster",
+  "display_name": "Kubernetes 服务 AKS",
+  "description": "Azure Kubernetes 服务，托管的容器编排平台",
+  "core_params": [
+    {
+      "name": "name",
+      "label": "集群名称",
+      "type": "string",
+      "required": true,
+      "description": "AKS 集群的名称"
+    },
+    {
+      "name": "resource_group_name",
+      "label": "资源组名称",
+      "type": "string",
+      "required": true,
+      "description": "所属资源组的名称"
+    },
+    {
+      "name": "dns_prefix",
+      "label": "DNS 前缀",
+      "type": "string",
+      "required": true,
+      "description": "集群的 DNS 前缀"
+    },
+    {
+      "name": "node_count",
+      "label": "节点数量",
+      "type": "number",
+      "required": true,
+      "default": 2,
+      "min": 1,
+      "max": 50,
+      "description": "默认节点池的节点数量"
+    },
+    {
+      "name": "vm_size",
+      "label": "节点规格",
+      "type": "select",
+      "required": true,
+      "default": "Standard_D2s_v3",
+      "options": ["Standard_D2s_v3", "Standard_D4s_v3", "Standard_D8s_v3"],
+      "description": "节点虚拟机的规格"
+    }
+  ]
+}

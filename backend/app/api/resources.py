@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
 from app.core.terraform_manager import TerraformManager
@@ -42,25 +42,28 @@ class ResourceTypeList(BaseModel):
 
 
 @router.get("/types", response_model=ResourceTypeList)
-async def get_resource_types():
-    """获取所有支持的资源类型列表"""
-    return ResourceTypeList(resource_types=get_tf_manager().get_resource_types())
+async def get_resource_types(provider: str = Query("alicloud", description="云平台: alicloud | azure")):
+    """获取指定云平台的资源类型列表"""
+    return ResourceTypeList(resource_types=get_tf_manager().get_resource_types(provider))
 
 
 @router.get("/types/{resource_type}/schema")
-async def get_resource_schema(resource_type: str):
+async def get_resource_schema(
+    resource_type: str,
+    provider: str = Query("alicloud", description="云平台: alicloud | azure"),
+):
     """获取指定资源类型的参数 Schema"""
-    schema = get_tf_manager().get_resource_schema(resource_type)
+    schema = get_tf_manager().get_resource_schema(resource_type, provider)
     if not schema:
-        raise HTTPException(status_code=404, detail=f"不支持的资源类型: {resource_type}")
+        raise HTTPException(status_code=404, detail=f"不支持的资源类型: {resource_type} (provider: {provider})")
     return schema
 
 
 @router.get("/instances")
-async def get_resource_instances():
-    """获取 Terraform 管理的资源实例列表（用于销毁/修改操作）"""
+async def get_resource_instances(provider: str = Query("alicloud", description="云平台: alicloud | azure")):
+    """获取 Terraform 管理的资源实例列表"""
     state_manager = get_state_manager()
-    instances = state_manager.get_resource_list()
+    instances = state_manager.get_resource_list(provider)
     return {"instances": instances}
 
 

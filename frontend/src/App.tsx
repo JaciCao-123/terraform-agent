@@ -6,7 +6,7 @@ import ConfigDialog from './components/ConfigDialog'
 import CodeReview from './components/CodeReview'
 import ExecutionPanel from './components/ExecutionPanel'
 import TerminalView from './components/TerminalView'
-import type { OperationType, ResourceSchema } from './types'
+import type { OperationType, ResourceSchema, CloudProvider } from './types'
 
 const { Header, Content } = Layout
 
@@ -16,6 +16,7 @@ const App: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(0)
   const [stepStatus, setStepStatus] = useState<StepStatus[]>(['process', 'wait', 'wait', 'wait', 'wait'])
 
+  const [cloudProvider, setCloudProvider] = useState<CloudProvider>('alicloud')
   const [operationType, setOperationType] = useState<OperationType>('create')
   const [resourceType, setResourceType] = useState<string | null>(null)
   const [resourceSchema, setResourceSchema] = useState<ResourceSchema | null>(null)
@@ -35,7 +36,15 @@ const App: React.FC = () => {
   }, [])
 
   const handleResourceSelected = useCallback(
-    (op: OperationType, resType: string, schema: ResourceSchema, targetAddress?: string, resourceId?: string) => {
+    (
+      op: OperationType,
+      resType: string,
+      schema: ResourceSchema,
+      provider: CloudProvider,
+      targetAddress?: string,
+      resourceId?: string,
+    ) => {
+      setCloudProvider(provider)
       setOperationType(op)
       setResourceType(resType)
       setResourceSchema(schema)
@@ -95,6 +104,7 @@ const App: React.FC = () => {
   const handleReset = useCallback(() => {
     setCurrentStep(0)
     setStepStatus(['process', 'wait', 'wait', 'wait', 'wait'])
+    setCloudProvider('alicloud')
     setOperationType('create')
     setResourceType(null)
     setResourceSchema(null)
@@ -124,8 +134,7 @@ const App: React.FC = () => {
           { title: '配置参数', status: stepStatus[1] },
           { title: '审查 Plan', status: stepStatus[2] },
           { title: '执行 Apply', status: stepStatus[3] },
-        ]
-    ),
+        ]),
     { title: '查看结果', status: stepStatus[4] },
   ]
 
@@ -147,43 +156,43 @@ const App: React.FC = () => {
     >
       <Layout style={{ minHeight: '100vh', background: '#f8fafc' }}>
         <Header
-  style={{
-    background: '#1e293b',
-    padding: '0 24px',
-    display: 'flex',
-    alignItems: 'center',
-    height: 56,
-    lineHeight: '56px',
-    cursor: 'pointer',
-    position: 'sticky',
-    top: 0,
-    zIndex: 100,
-    boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
-  }}
-  onClick={handleReset}
->
-  <div
-    style={{
-      width: 32,
-      height: 32,
-      borderRadius: 8,
-      background: 'linear-gradient(135deg, #2563eb, #6366f1)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginRight: 10,
-      flexShrink: 0,
-    }}
-  >
-    <CloudServerOutlined style={{ fontSize: 16, color: '#ffffff' }} />
-  </div>
-  <div style={{ overflow: 'hidden' }}>
-    <div style={{ color: '#f1f5f9', fontSize: 16, fontWeight: 700, lineHeight: 1.3, whiteSpace: 'nowrap' }}>
-      Terraform Agent
-    </div>
-    <div style={{ fontSize: 10, color: '#93c5fd', lineHeight: 1.2 }}>云资源管理平台</div>
-  </div>
-</Header>
+          style={{
+            background: '#1e293b',
+            padding: '0 24px',
+            display: 'flex',
+            alignItems: 'center',
+            height: 56,
+            lineHeight: '56px',
+            cursor: 'pointer',
+            position: 'sticky',
+            top: 0,
+            zIndex: 100,
+            boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
+          }}
+          onClick={handleReset}
+        >
+          <div
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 8,
+              background: 'linear-gradient(135deg, #2563eb, #6366f1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginRight: 10,
+              flexShrink: 0,
+            }}
+          >
+            <CloudServerOutlined style={{ fontSize: 16, color: '#ffffff' }} />
+          </div>
+          <div style={{ overflow: 'hidden' }}>
+            <div style={{ color: '#f1f5f9', fontSize: 16, fontWeight: 700, lineHeight: 1.3, whiteSpace: 'nowrap' }}>
+              Terraform Agent
+            </div>
+            <div style={{ fontSize: 10, color: '#93c5fd', lineHeight: 1.2 }}>多云资源管理平台</div>
+          </div>
+        </Header>
         <Content style={{ padding: '16px 12px 24px 12px', maxWidth: 800, margin: '0 auto', width: '100%' }}>
           <div
             style={{
@@ -195,11 +204,7 @@ const App: React.FC = () => {
               boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
             }}
           >
-            <Steps
-              current={currentStep}
-              items={stepItems}
-              style={{ gap: 0 }}
-            />
+            <Steps current={currentStep} items={stepItems} style={{ gap: 0 }} />
           </div>
 
           {currentStep === 0 && (
@@ -215,6 +220,7 @@ const App: React.FC = () => {
               operationType={operationType}
               resourceType={resourceType}
               resourceId={targetResourceId}
+              provider={cloudProvider}
               schema={resourceSchema}
               targetResourceAddress={targetResourceAddress}
               onComplete={handleConfigComplete}
@@ -230,6 +236,7 @@ const App: React.FC = () => {
             <CodeReview
               tfContent={tfContent}
               operationType={operationType}
+              provider={cloudProvider}
               resourceType={resourceType || ''}
               targetResourceAddress={targetResourceAddress}
               onPlanComplete={handlePlanComplete}
@@ -246,6 +253,7 @@ const App: React.FC = () => {
             <ExecutionPanel
               tfContent={tfContent}
               operationType={operationType}
+              provider={cloudProvider}
               resourceType={resourceType || ''}
               targetResourceAddress={targetResourceAddress}
               onApplyComplete={handleApplyComplete}

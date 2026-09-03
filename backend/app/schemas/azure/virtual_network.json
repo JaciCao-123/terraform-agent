@@ -1,0 +1,30 @@
+{
+  "resource_type": "virtual_network",
+  "terraform_resource": "azurerm_virtual_network",
+  "display_name": "虚拟网络 Virtual Network",
+  "description": "Azure 虚拟网络，提供隔离的网络环境",
+  "core_params": [
+    {
+      "name": "name",
+      "label": "VNet 名称",
+      "type": "string",
+      "required": true,
+      "description": "虚拟网络的名称"
+    },
+    {
+      "name": "resource_group_name",
+      "label": "资源组名称",
+      "type": "string",
+      "required": true,
+      "description": "所属资源组的名称"
+    },
+    {
+      "name": "address_space",
+      "label": "地址空间",
+      "type": "string",
+      "required": true,
+      "default": "10.0.0.0/16",
+      "description": "VNet 的 CIDR 地址空间"
+    }
+  ]
+}

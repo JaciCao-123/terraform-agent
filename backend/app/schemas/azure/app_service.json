@@ -1,0 +1,36 @@
+{
+  "resource_type": "app_service",
+  "terraform_resource": "azurerm_app_service",
+  "display_name": "应用服务 App Service",
+  "description": "Azure App Service，托管 Web 应用和 API 的 PaaS 服务",
+  "core_params": [
+    {
+      "name": "name",
+      "label": "应用名称",
+      "type": "string",
+      "required": true,
+      "description": "App Service 的名称"
+    },
+    {
+      "name": "resource_group_name",
+      "label": "资源组名称",
+      "type": "string",
+      "required": true,
+      "description": "所属资源组的名称"
+    },
+    {
+      "name": "app_service_plan_name",
+      "label": "App Service Plan 名称",
+      "type": "string",
+      "required": true,
+      "description": "App Service Plan 的名称"
+    },
+    {
+      "name": "location",
+      "label": "区域",
+      "type": "string",
+      "required": false,
+      "description": "部署区域，留空使用默认区域"
+    }
+  ]
+}

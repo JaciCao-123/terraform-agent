@@ -1,0 +1,31 @@
+{
+  "resource_type": "cdn_profile",
+  "terraform_resource": "azurerm_cdn_profile",
+  "display_name": "CDN 内容分发网络",
+  "description": "Azure CDN 内容分发网络，加速全球内容分发",
+  "core_params": [
+    {
+      "name": "name",
+      "label": "CDN Profile 名称",
+      "type": "string",
+      "required": true,
+      "description": "CDN Profile 的名称"
+    },
+    {
+      "name": "resource_group_name",
+      "label": "资源组名称",
+      "type": "string",
+      "required": true,
+      "description": "所属资源组的名称"
+    },
+    {
+      "name": "sku",
+      "label": "SKU 规格",
+      "type": "select",
+      "required": true,
+      "default": "Standard_Microsoft",
+      "options": ["Standard_Microsoft", "Standard_Verizon", "Standard_Akamai", "Premium_Verizon"],
+      "description": "CDN Profile 的 SKU 规格"
+    }
+  ]
+}

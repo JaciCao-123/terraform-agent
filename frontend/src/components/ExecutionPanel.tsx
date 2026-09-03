@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react'
 import { Card, Button, Typography, Alert, Space } from 'antd'
 import { executeApply, executeDestroy } from '../services/api'
 import TerminalView from './TerminalView'
-import type { OperationType, SSEMessage } from '../types'
+import type { OperationType, SSEMessage, CloudProvider } from '../types'
 
 const { Title } = Typography
 
@@ -11,6 +11,7 @@ interface Props {
   operationType: OperationType
   resourceType: string
   targetResourceAddress: string
+  provider: CloudProvider
   onApplyComplete: (logs: string[]) => void
   onError: (error: string) => void
   onBack: () => void
@@ -27,6 +28,7 @@ const ExecutionPanel: React.FC<Props> = ({
   operationType,
   resourceType,
   targetResourceAddress,
+  provider,
   onApplyComplete,
   onError,
   onBack,
@@ -55,11 +57,11 @@ const ExecutionPanel: React.FC<Props> = ({
     setApplyLogs([])
     setApplyDone(false)
     if (operationType === 'create' || operationType === 'update') {
-      executeApply(tfContent, resourceType, '', handleMessage, handleApplyError, handleApplyComplete)
+      executeApply(tfContent, resourceType, '', handleMessage, handleApplyError, handleApplyComplete, provider)
     } else {
-      executeDestroy(targetResourceAddress, handleMessage, handleApplyError, handleApplyComplete)
+      executeDestroy(targetResourceAddress, handleMessage, handleApplyError, handleApplyComplete, provider)
     }
-  }, [tfContent, resourceType, operationType, targetResourceAddress, handleMessage, handleApplyError, handleApplyComplete])
+  }, [tfContent, resourceType, operationType, targetResourceAddress, provider, handleMessage, handleApplyError, handleApplyComplete])
 
   const handleFinish = () => onApplyComplete(applyLogs)
 

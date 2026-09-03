@@ -1,0 +1,46 @@
+{
+  "resource_type": "virtual_machine",
+  "terraform_resource": "azurerm_linux_virtual_machine",
+  "display_name": "虚拟机 Virtual Machine",
+  "description": "Azure 虚拟机，支持 Windows 和 Linux 操作系统",
+  "core_params": [
+    {
+      "name": "name",
+      "label": "VM 名称",
+      "type": "string",
+      "required": true,
+      "description": "虚拟机的名称"
+    },
+    {
+      "name": "resource_group_name",
+      "label": "资源组名称",
+      "type": "string",
+      "required": true,
+      "description": "所属资源组的名称"
+    },
+    {
+      "name": "size",
+      "label": "实例规格",
+      "type": "select",
+      "required": true,
+      "default": "Standard_B2s",
+      "options": ["Standard_B1s", "Standard_B2s", "Standard_D2s_v3", "Standard_D4s_v3"],
+      "description": "虚拟机实例规格"
+    },
+    {
+      "name": "admin_username",
+      "label": "管理员用户名",
+      "type": "string",
+      "required": true,
+      "default": "azureuser",
+      "description": "VM 的管理员登录用户名"
+    },
+    {
+      "name": "admin_password",
+      "label": "管理员密码",
+      "type": "password",
+      "required": true,
+      "description": "VM 的管理员登录密码"
+    }
+  ]
+}

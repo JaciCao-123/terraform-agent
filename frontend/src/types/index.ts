@@ -1,3 +1,6 @@
+/** 云平台类型 */
+export type CloudProvider = 'alicloud' | 'azure'
+
 /** 资源类型 */
 export interface ResourceType {
   type: string
@@ -42,6 +45,7 @@ export interface ResourceInstance {
 export interface GenerateRequest {
   resource_type: string
   params: Record<string, unknown>
+  provider?: CloudProvider
   user_description?: string
 }
 
@@ -55,11 +59,13 @@ export interface ExecuteRequest {
   tf_content: string
   resource_type: string
   plan_result?: string
+  provider?: CloudProvider
 }
 
 /** 销毁操作的请求 */
 export interface DestroyRequest {
   resource_address: string
+  provider?: CloudProvider
 }
 
 /** SSE 消息 */

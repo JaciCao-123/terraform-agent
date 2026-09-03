@@ -19,64 +19,83 @@ from app.llm.base import BaseLLMProvider
 class TerraformManager:
     """编排 Terraform 配置生成、plan、apply 全流程"""
 
-    # 资源类型到 Terraform 资源名映射
+    # 按 provider 分组的资源类型到 Terraform 资源名映射
     RESOURCE_TYPE_MAP = {
-        "ecs": "alicloud_instance",
-        "rds": "alicloud_db_instance",
-        "slb": "alicloud_slb",
-        "oss": "alicloud_oss_bucket",
-        "vpc": "alicloud_vpc",
-        "redis": "alicloud_kvstore_instance",
-        "ack": "alicloud_cs_managed_kubernetes",
-        "cdn": "alicloud_cdn_domain",
-        "nas": "alicloud_nas_file_system",
+        "alicloud": {
+            "ecs": "alicloud_instance",
+            "rds": "alicloud_db_instance",
+            "slb": "alicloud_slb",
+            "oss": "alicloud_oss_bucket",
+            "vpc": "alicloud_vpc",
+            "redis": "alicloud_kvstore_instance",
+            "ack": "alicloud_cs_managed_kubernetes",
+            "cdn": "alicloud_cdn_domain",
+            "nas": "alicloud_nas_file_system",
+        },
+        "azure": {
+            "resource_group": "azurerm_resource_group",
+            "virtual_network": "azurerm_virtual_network",
+            "virtual_machine": "azurerm_linux_virtual_machine",
+            "storage_account": "azurerm_storage_account",
+            "sql_database": "azurerm_mssql_database",
+            "aks": "azurerm_kubernetes_cluster",
+            "redis_cache": "azurerm_redis_cache",
+            "cdn_profile": "azurerm_cdn_profile",
+            "app_service": "azurerm_app_service",
+        },
     }
 
     def __init__(self):
         self.docker = DockerEngine()
         self._llm: Optional[BaseLLMProvider] = None
-        self.schemas: dict[str, dict] = {}
-        self._latest_fixed_tf: Optional[str] = None  # 存储最近一次自动修复后的代码
+        self.schemas: dict[str, dict[str, dict]] = {"alicloud": {}, "azure": {}}
+        self._latest_fixed_tf: Optional[str] = None
         self._load_schemas()
 
     @property
     def llm(self) -> BaseLLMProvider:
-        """懒加载 LLM Provider，避免服务启动时因缺少 API Key 而崩溃"""
+        """懒加载 LLM Provider"""
         if self._llm is None:
             self._llm = get_llm_provider()
         return self._llm
 
     def _load_schemas(self):
-        """加载所有资源 Schema"""
-        schema_dir = os.path.join(os.path.dirname(__file__), "..", "schemas")
-        if not os.path.exists(schema_dir):
-            return
-        for fname in os.listdir(schema_dir):
-            if fname.endswith(".json"):
-                with open(os.path.join(schema_dir, fname)) as f:
-                    schema = json.load(f)
-                    self.schemas[schema["resource_type"]] = schema
+        """加载所有 provider 的资源 Schema，按 provider 分组"""
+        base_dir = os.path.join(os.path.dirname(__file__), "..", "schemas")
+        for provider in ["alicloud", "azure"]:
+            schema_dir = os.path.join(base_dir, provider)
+            if not os.path.exists(schema_dir):
+                continue
+            for fname in os.listdir(schema_dir):
+                if fname.endswith(".json"):
+                    with open(os.path.join(schema_dir, fname)) as f:
+                        schema = json.load(f)
+                        self.schemas[provider][schema["resource_type"]] = schema
 
-    def get_resource_types(self) -> list[dict]:
-        """获取所有支持的资源类型列表"""
+    def get_resource_types(self, provider: str = "alicloud") -> list[dict]:
+        """获取指定 provider 支持的资源类型列表"""
         return [
             {
                 "type": k,
                 "display_name": v["display_name"],
                 "terraform_resource": v["terraform_resource"],
             }
-            for k, v in self.schemas.items()
+            for k, v in self.schemas.get(provider, {}).items()
         ]
 
-    def get_resource_schema(self, resource_type: str) -> Optional[dict]:
-        """获取指定资源类型的 Schema"""
-        return self.schemas.get(resource_type)
+    def get_resource_schema(self, resource_type: str, provider: str = "alicloud") -> Optional[dict]:
+        """获取指定 provider 下资源类型的 Schema"""
+        return self.schemas.get(provider, {}).get(resource_type)
 
-    async def generate_tf(self, resource_type: str, params: dict, user_description: Optional[str] = None) -> str:
+    def get_terraform_resource(self, resource_type: str, provider: str = "alicloud") -> Optional[str]:
+        """获取资源类型对应的 Terraform 资源名"""
+        return self.RESOURCE_TYPE_MAP.get(provider, {}).get(resource_type)
+
+    async def generate_tf(self, resource_type: str, params: dict, provider: str = "alicloud", user_description: Optional[str] = None) -> str:
         """调用 LLM 生成 Terraform 配置文件"""
-        schema = self.get_resource_schema(resource_type)
+        schema = self.get_resource_schema(resource_type, provider)
         if not schema:
-            raise ValueError(f"不支持的资源类型: {resource_type}")
+            raise ValueError(f"不支持的资源类型: {resource_type} (provider: {provider})")
 
         system_prompt, user_prompt = build_terraform_generation_prompt(
             resource_type=resource_type,
@@ -84,6 +103,7 @@ class TerraformManager:
             schema_json=json.dumps(schema, ensure_ascii=False, indent=2),
             params=params,
             action="create",
+            provider=provider,
             user_description=user_description,
         )
         tf_content = await self.llm.generate(
@@ -93,14 +113,13 @@ class TerraformManager:
         )
         return tf_content.strip()
 
-    async def generate_destroy_tf(self, resource_address: str, user_description: Optional[str] = None) -> str:
+    async def generate_destroy_tf(self, resource_address: str, provider: str = "alicloud", user_description: Optional[str] = None) -> str:
         """生成销毁指定资源的 Terraform 配置"""
-        # 从 state 中获取资源类型
         from app.core.state_manager import StateManager
         from app.llm.prompt_templates import build_terraform_generation_prompt
 
         state_manager = StateManager()
-        resources = state_manager.get_resource_list()
+        resources = state_manager.get_resource_list(provider)
         target = None
         for r in resources:
             if r["address"] == resource_address:
@@ -108,18 +127,15 @@ class TerraformManager:
                 break
 
         if not target:
-            # 未找到目标资源，返回空（将通过 -target 执行）
             return ""
 
-        # 生成包含 provider 声明的配置
         resource_type = target["type"]
-        tf_resource = self.RESOURCE_TYPE_MAP.get(resource_type, "")
+        tf_resource = self.get_terraform_resource(resource_type, provider)
         if not tf_resource:
             return ""
 
-        # 如果有自然语言描述，通过 LLM 生成（可以结合描述处理关联资源）
         if user_description:
-            schema = self.get_resource_schema(resource_type)
+            schema = self.get_resource_schema(resource_type, provider)
             if schema:
                 system_prompt, user_prompt = build_terraform_generation_prompt(
                     resource_type=resource_type,
@@ -127,6 +143,7 @@ class TerraformManager:
                     schema_json=json.dumps(schema, ensure_ascii=False, indent=2),
                     params={},
                     action="destroy",
+                    provider=provider,
                     existing_resource_address=resource_address,
                     user_description=user_description,
                 )
@@ -137,17 +154,16 @@ class TerraformManager:
                 )
                 return tf_content.strip()
 
-        # 默认返回空框架
         return f"""resource "{tf_resource}" "{target["name"]}" {{
   # 此资源将被销毁，详情请查看 terraform plan -destroy
 }}
 """
 
-    async def generate_update_tf(self, resource_type: str, resource_address: str, params: dict, user_description: Optional[str] = None) -> str:
+    async def generate_update_tf(self, resource_type: str, resource_address: str, params: dict, provider: str = "alicloud", user_description: Optional[str] = None) -> str:
         """生成更新已有资源的 Terraform 配置"""
-        schema = self.get_resource_schema(resource_type)
+        schema = self.get_resource_schema(resource_type, provider)
         if not schema:
-            raise ValueError(f"不支持的资源类型: {resource_type}")
+            raise ValueError(f"不支持的资源类型: {resource_type} (provider: {provider})")
 
         system_prompt, user_prompt = build_terraform_generation_prompt(
             resource_type=resource_type,
@@ -155,6 +171,7 @@ class TerraformManager:
             schema_json=json.dumps(schema, ensure_ascii=False, indent=2),
             params=params,
             action="update",
+            provider=provider,
             existing_resource_address=resource_address,
             user_description=user_description,
         )
@@ -165,7 +182,7 @@ class TerraformManager:
         )
         return tf_content.strip()
 
-    async def plan(self, tf_content: str, resource_type: str) -> AsyncGenerator[str, None]:
+    async def plan(self, tf_content: str, resource_type: str, provider: str = "alicloud") -> AsyncGenerator[str, None]:
         """执行 terraform plan，失败时自动修复并重试"""
         max_retries = 2
         current_tf = tf_content
@@ -180,6 +197,7 @@ class TerraformManager:
             async for line in self.docker.run_terraform(
                 command=["plan"],
                 tf_content=current_tf,
+                provider=provider,
             ):
                 lines.append(line)
                 yield line
@@ -189,7 +207,7 @@ class TerraformManager:
             if not error_detected:
                 if attempt > 0:
                     self._latest_fixed_tf = current_tf
-                return  # plan 成功
+                return
 
             if attempt < max_retries:
                 error_log = "\n".join(lines)
@@ -203,32 +221,35 @@ class TerraformManager:
 
         yield "\n[ERROR] 已达到最大重试次数，请检查配置\n"
 
-    async def plan_destroy(self, resource_address: str) -> AsyncGenerator[str, None]:
-        """执行 terraform plan -destroy，实时返回输出"""
+    async def plan_destroy(self, resource_address: str, provider: str = "alicloud") -> AsyncGenerator[str, None]:
+        """执行 terraform plan -destroy"""
         async for line in self.docker.run_terraform(
             command=["plan", "-destroy", f"-target={resource_address}"],
             tf_content="",
+            provider=provider,
         ):
             yield line
 
-    async def apply(self, tf_content: str) -> AsyncGenerator[str, None]:
-        """执行 terraform apply，实时返回输出"""
+    async def apply(self, tf_content: str, provider: str = "alicloud") -> AsyncGenerator[str, None]:
+        """执行 terraform apply"""
         async for line in self.docker.run_terraform(
             command=["apply", "-auto-approve"],
             tf_content=tf_content,
+            provider=provider,
         ):
             yield line
 
-    async def destroy(self, resource_address: str) -> AsyncGenerator[str, None]:
-        """执行 terraform destroy，实时返回输出"""
+    async def destroy(self, resource_address: str, provider: str = "alicloud") -> AsyncGenerator[str, None]:
+        """执行 terraform destroy"""
         async for line in self.docker.run_terraform(
             command=["destroy", "-auto-approve", f"-target={resource_address}"],
             tf_content="",
+            provider=provider,
         ):
             yield line
 
     async def fix_tf(self, tf_content: str, error_log: str) -> str:
-        """修复 Terraform 配置（plan/apply 失败时调用）"""
+        """修复 Terraform 配置"""
         system_prompt, user_prompt = build_terraform_fix_prompt(tf_content, error_log)
         fixed = await self.llm.generate(
             prompt=user_prompt,
@@ -257,11 +278,7 @@ class TerraformManager:
         apply_result: str,
         status: str,
     ):
-        """
-        记录操作日志到 OSS。
-
-        目前先写本地文件，后续可接入 OSS。
-        """
+        """记录操作日志到文件"""
         log_entry = {
             "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
             "operation_type": operation_type,
