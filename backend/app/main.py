@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.api import resources, llm, execute
+from app.api import resources, llm, execute, ansible
 
 
 @asynccontextmanager
@@ -47,6 +47,7 @@ app.add_middleware(
 app.include_router(resources.router)
 app.include_router(llm.router)
 app.include_router(execute.router)
+app.include_router(ansible.router)
 
 
 @app.get("/api/health")

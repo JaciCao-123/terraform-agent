@@ -444,3 +444,223 @@ def build_analyze_error_prompt(
         f"请分析原因并给出修复建议。"
     )
     return system_prompt, user_prompt
+
+
+# ═══════════════════════════════════════════
+# Ansible Playbook Prompt 模板
+# ═══════════════════════════════════════════
+
+ANSIBLE_FEW_SHOT_EXAMPLES = {
+    "install_nginx": """## 示例：安装 Nginx 并启动
+
+- name: 安装和配置 Nginx
+  hosts: all
+  become: yes
+  tasks:
+    - name: 更新 apt 缓存
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: 安装 Nginx
+      apt:
+        name: nginx
+        state: present
+
+    - name: 确保 Nginx 服务运行
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+
+    - name: 开放防火墙端口
+      ufw:
+        rule: allow
+        port: "80"
+        proto: tcp
+""",
+    "deploy_app": """## 示例：部署 Web 应用
+
+- name: 部署 Web 应用
+  hosts: all
+  become: yes
+  vars:
+    app_dir: /opt/myapp
+    app_port: 8080
+  tasks:
+    - name: 创建应用目录
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: 复制应用文件
+      copy:
+        src: /tmp/app.tar.gz
+        dest: "{{ app_dir }}/app.tar.gz"
+
+    - name: 解压应用
+      unarchive:
+        src: "{{ app_dir }}/app.tar.gz"
+        dest: "{{ app_dir }}"
+        remote_src: yes
+
+    - name: 安装 Python 依赖
+      pip:
+        requirements: "{{ app_dir }}/requirements.txt"
+        state: present
+
+    - name: 启动应用服务
+      systemd:
+        name: myapp
+        state: started
+        enabled: yes
+""",
+    "configure_ssh": """## 示例：配置 SSH 安全加固
+
+- name: 加固 SSH 配置
+  hosts: all
+  become: yes
+  tasks:
+    - name: 修改 SSH 端口
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^#?Port "
+        line: "Port 2222"
+
+    - name: 禁用 root 登录
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^#?PermitRootLogin"
+        line: "PermitRootLogin no"
+
+    - name: 仅允许密钥登录
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^#?PasswordAuthentication"
+        line: "PasswordAuthentication no"
+
+    - name: 重启 SSH 服务
+      service:
+        name: sshd
+        state: restarted
+""",
+    "setup_docker": """## 示例：安装 Docker 和 docker-compose
+
+- name: 安装 Docker 环境
+  hosts: all
+  become: yes
+  tasks:
+    - name: 安装 Docker 依赖
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+        state: present
+
+    - name: 添加 Docker GPG 密钥
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: 添加 Docker 仓库
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+
+    - name: 安装 Docker
+      apt:
+        name: docker-ce
+        state: present
+
+    - name: 安装 docker-compose
+      get_url:
+        url: https://github.com/docker/compose/releases/latest/download/docker-compose-Linux-x86_64
+        dest: /usr/local/bin/docker-compose
+        mode: "0755"
+""",
+}
+
+
+def build_ansible_playbook_prompt(
+    resource_info: dict,
+    user_description: str,
+    provider: str = "alicloud",
+) -> tuple[str, str]:
+    """
+    构建生成 Ansible Playbook 的 Prompt。
+    返回 (system_prompt, user_prompt)
+    """
+    provider_name = "阿里云" if provider == "alicloud" else "Azure"
+
+    system_prompt = (
+        "你是一个 Ansible Playbook 生成专家。\n"
+        "你的任务是根据用户提供的资源和自然语言描述，生成正确的 Ansible Playbook。\n\n"
+        "要求：\n"
+        "1. 只输出纯 YAML 代码，不要包含任何解释、markdown 标记或代码块包围\n"
+        "2. 代码必须符合 Ansible 语法规范\n"
+        "3. 使用 `hosts: all` 作为目标主机（inventory 会自动管理分组）\n"
+        "4. 使用 `become: yes` 获取 root 权限\n"
+        "5. 任务名简洁清晰，使用中文描述\n"
+        "6. 只使用 Ansible 内置模块，不要使用自定义模块\n"
+        "7. 确保 Playbook 幂等性（可重复执行）\n"
+        "8. 不要包含任何注释行\n"
+        "9. 如果用户描述涉及安装软件，请先更新包管理器缓存\n"
+        "10. 如果用户描述涉及防火墙配置，请使用 ufw 模块\n"
+        "11. 如果用户描述涉及服务管理，请使用 systemd 模块\n"
+    )
+
+    user_prompt = (
+        f"请生成 Ansible Playbook，用于在 {provider_name} 的机器上进行配置管理。\n\n"
+        f"目标机器信息:\n"
+        f"- 主机名: {resource_info.get('name', 'target')}\n"
+        f"- IP 地址: {resource_info.get('host', '')}\n"
+        f"- 操作系统: {resource_info.get('os_type', 'Linux')}\n"
+        f"- SSH 用户: {resource_info.get('ssh_user', 'root')}\n\n"
+        f"用户需求:\n{user_description}\n\n"
+    )
+
+    # 根据用户描述的关键词选择最相关的 few-shot 示例
+    desc_lower = user_description.lower()
+    if any(kw in desc_lower for kw in ["nginx", "apache", "web", "http"]):
+        example_key = "install_nginx"
+    elif any(kw in desc_lower for kw in ["部署", "应用", "deploy", "app", "代码"]):
+        example_key = "deploy_app"
+    elif any(kw in desc_lower for kw in ["ssh", "安全", "加固"]):
+        example_key = "configure_ssh"
+    elif any(kw in desc_lower for kw in ["docker", "容器"]):
+        example_key = "setup_docker"
+    else:
+        example_key = "install_nginx"
+
+    example = ANSIBLE_FEW_SHOT_EXAMPLES.get(example_key)
+    if example:
+        user_prompt += f"请参考以下示例格式（注意示例中的参数值是示意，请根据用户需求生成）：\n{example}\n\n"
+
+    user_prompt += "请直接输出 YAML 代码。"
+    return system_prompt, user_prompt
+
+
+def build_ansible_fix_prompt(
+    playbook_yaml: str,
+    error_log: str,
+) -> tuple[str, str]:
+    """构建修复 Ansible Playbook 的 Prompt"""
+    system_prompt = (
+        "你是一个 Ansible Playbook 修复专家。\n"
+        "用户提供的 Playbook 执行时出错，请分析错误并修复代码。\n"
+        "只输出修正后的纯 YAML 代码，不要包含任何解释。\n"
+        "重要规则：\n"
+        "- 只使用 Ansible 内置模块\n"
+        "- 确保 YAML 格式正确（缩进、冒号、短横线）\n"
+        "- 修复语法错误和模块参数错误\n"
+        "- 不要更改用户的操作意图\n"
+    )
+    user_prompt = (
+        f"以下 Ansible Playbook 执行出错：\n\n{playbook_yaml}\n\n"
+        f"错误信息：\n\n{error_log}\n\n"
+        "请修复代码。"
+    )
+    return system_prompt, user_prompt
