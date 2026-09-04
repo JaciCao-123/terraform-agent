@@ -25,7 +25,8 @@
       "required": true,
       "default": "Standard_B2s",
       "options": ["Standard_B1s", "Standard_B2s", "Standard_D2s_v3", "Standard_D4s_v3"],
-      "description": "虚拟机实例规格"
+      "large_select": true,
+      "description": "虚拟机实例规格，可输入任意规格或描述需求如 2核4G"
     },
     {
       "name": "admin_username",

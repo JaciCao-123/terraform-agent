@@ -27,7 +27,8 @@
         "ecs.c6.large",
         "ecs.c6.xlarge"
       ],
-      "description": "选择实例规格，影响 CPU 和内存"
+      "large_select": true,
+      "description": "选择实例规格，影响 CPU 和内存。可输入任意规格如 ecs.g7.2xlarge，或描述需求如 4核8G"
     },
     {
       "name": "image_id",
@@ -41,7 +42,8 @@
         "ubuntu_22_04_x64_20G_alibase_2024",
         "win2022_zh-cn_40G_alibase_2024"
       ],
-      "description": "操作系统镜像"
+      "large_select": true,
+      "description": "操作系统镜像，可输入任意镜像 ID 或描述需求如 Ubuntu 22.04"
     },
     {
       "name": "system_disk_size",

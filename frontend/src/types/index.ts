@@ -20,6 +20,8 @@ export interface SchemaParam {
   max?: number
   pattern?: string
   description?: string
+  /** 当 options 无法穷举时，标记为 large_select，前端渲染为可输入的下拉框 */
+  large_select?: boolean
 }
 
 /** 资源 Schema */

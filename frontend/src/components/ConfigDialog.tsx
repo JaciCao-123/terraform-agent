@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Card, Form, Input, InputNumber, Select, Button, Typography, message, Spin, Alert, Space } from 'antd'
+import { Card, Form, Input, InputNumber, Select, AutoComplete, Button, Typography, message, Spin, Alert, Space } from 'antd'
 import { EditOutlined, ThunderboltOutlined } from '@ant-design/icons'
 import { generateTf, generateDestroyTf, generateUpdateTf, getResourceConfig } from '../services/api'
 import type { OperationType, ResourceSchema, CloudProvider } from '../types'
@@ -136,6 +136,23 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
 
     switch (param.type) {
       case 'select':
+        if (param.large_select) {
+          return (
+            <Form.Item {...commonProps} key={param.name}>
+              <AutoComplete
+                placeholder={`输入或选择${param.label}，例如: ${param.options?.[0] || ''}`}
+                options={param.options?.map((o) => ({ label: o, value: o }))}
+                filterOption={(inputValue, option) =>
+                  option?.value.toUpperCase().includes(inputValue.toUpperCase()) ?? false
+                }
+                size="large"
+                style={{ width: '100%' }}
+              >
+                <Input style={{ borderRadius: 8 }} />
+              </AutoComplete>
+            </Form.Item>
+          )
+        }
         return (
           <Form.Item {...commonProps} key={param.name}>
             <Select placeholder={`请选择${param.label}`} options={param.options?.map((o) => ({ label: o, value: o }))} size="large" style={{ borderRadius: 8 }} />

@@ -18,7 +18,12 @@
       "type": "select",
       "required": true,
       "default": "MySQL",
-      "options": ["MySQL", "PostgreSQL", "SQLServer", "MariaDB"],
+      "options": [
+        "MySQL",
+        "PostgreSQL",
+        "SQLServer",
+        "MariaDB"
+      ],
       "description": "数据库引擎类型"
     },
     {
@@ -27,8 +32,13 @@
       "type": "select",
       "required": true,
       "default": "8.0",
-      "options": ["5.6", "5.7", "8.0"],
-      "description": "数据库引擎版本号，根据引擎不同可选版本不同"
+      "options": [
+        "5.6",
+        "5.7",
+        "8.0"
+      ],
+      "description": "数据库引擎版本号，可根据引擎不同选择或描述需求",
+      "large_select": true
     },
     {
       "name": "instance_type",
@@ -43,7 +53,8 @@
         "rds.mysql.c1.large",
         "rds.mysql.c1.xlarge"
       ],
-      "description": "RDS 实例规格"
+      "description": "RDS 实例规格，可输入任意规格或描述需求如 2核4G",
+      "large_select": true
     },
     {
       "name": "db_instance_storage",
