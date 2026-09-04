@@ -36,7 +36,6 @@ const App: React.FC = () => {
   const [ansibleStep, setAnsibleStep] = useState<'playbook' | 'execute'>('playbook')
   const [ansiblePlaybookYaml, setAnsiblePlaybookYaml] = useState('')
   const [ansibleInventoryYaml, setAnsibleInventoryYaml] = useState('')
-  const [resourceInfo, setResourceInfo] = useState<Record<string, unknown>>({})
 
   // 存量导入对话框
   const [importDialogOpen, setImportDialogOpen] = useState(false)
@@ -44,7 +43,7 @@ const App: React.FC = () => {
   // Ansible 独立入口
   const [showAnsibleStandalone, setShowAnsibleStandalone] = useState(false)
   const [ansibleStandaloneStep, setAnsibleStandaloneStep] = useState<'select' | 'playbook' | 'execute'>('select')
-  const [ansibleStandaloneInfo, setAnsibleStandaloneInfo] = useState<Record<string, unknown>>({})
+  const [ansibleStandaloneInfo, setAnsibleStandaloneInfo] = useState<Array<Record<string, unknown>>>([])
 
   const updateStep = useCallback((step: number, status: StepStatus) => {
     setStepStatus((prev) => {
@@ -373,11 +372,6 @@ const App: React.FC = () => {
                         type="primary"
                         icon={<ThunderboltOutlined />}
                         onClick={() => {
-                          setResourceInfo({
-                            name: resourceType || 'target',
-                            host: '',
-                            public_ip: '',
-                          })
                           setShowAnsible(true)
                           setAnsibleStep('playbook')
                         }}
@@ -412,10 +406,13 @@ const App: React.FC = () => {
           {showAnsible && ansibleStep === 'playbook' && (
             <AnsiblePlaybook
               provider={cloudProvider}
-              resourceInfo={resourceInfo}
-              resourceType={resourceType || ''}
-              resourceAddress={targetResourceAddress}
-              resourceName={resourceType || ''}
+              resources={[{
+                host: '',
+                name: resourceType || 'target',
+                provider: cloudProvider,
+                resourceType: resourceType || '',
+                resourceAddress: targetResourceAddress,
+              }]}
               onExecute={(playbookYaml, inventoryYaml) => {
                 setAnsiblePlaybookYaml(playbookYaml)
                 setAnsibleInventoryYaml(inventoryYaml)
@@ -448,8 +445,8 @@ const App: React.FC = () => {
             <>
               {ansibleStandaloneStep === 'select' && (
                 <AnsibleResourceSelect
-                  onSelect={(info) => {
-                    setAnsibleStandaloneInfo(info as unknown as Record<string, unknown>)
+                  onSelect={(resources) => {
+                    setAnsibleStandaloneInfo(resources as unknown as Array<Record<string, unknown>>)
                     setAnsibleStandaloneStep('playbook')
                   }}
                   onBack={() => {
@@ -460,11 +457,8 @@ const App: React.FC = () => {
               )}
               {ansibleStandaloneStep === 'playbook' && (
                 <AnsiblePlaybook
-                  provider={ansibleStandaloneInfo.provider as CloudProvider}
-                  resourceInfo={ansibleStandaloneInfo}
-                  resourceType={ansibleStandaloneInfo.resourceType as string}
-                  resourceAddress={ansibleStandaloneInfo.resourceAddress as string}
-                  resourceName={ansibleStandaloneInfo.name as string}
+                  provider={ansibleStandaloneInfo.length > 0 ? (ansibleStandaloneInfo[0].provider as CloudProvider) : 'alicloud'}
+                  resources={ansibleStandaloneInfo as unknown as Array<{ host: string; name: string; provider: CloudProvider; resourceType: string; resourceAddress: string }>}
                   onExecute={(playbookYaml, inventoryYaml) => {
                     setAnsiblePlaybookYaml(playbookYaml)
                     setAnsibleInventoryYaml(inventoryYaml)

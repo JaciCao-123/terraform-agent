@@ -1,18 +1,23 @@
 import React, { useState } from 'react'
-import { Card, Input, Button, Typography, message, Space, Alert } from 'antd'
-import { ThunderboltOutlined, SaveOutlined, CodeOutlined, PlayCircleOutlined } from '@ant-design/icons'
+import { Card, Input, Button, Typography, message, Space, Alert, Tag, Tooltip } from 'antd'
+import { ThunderboltOutlined, SaveOutlined, CodeOutlined, PlayCircleOutlined, CloudServerOutlined } from '@ant-design/icons'
 import { generateAnsiblePlaybook, saveAnsiblePlaybook } from '../services/api'
 import type { CloudProvider } from '../types'
 
 const { Title, Text } = Typography
 const { TextArea } = Input
 
-interface Props {
+interface TargetResource {
+  host: string
+  name: string
   provider: CloudProvider
-  resourceInfo: Record<string, unknown>
   resourceType: string
   resourceAddress: string
-  resourceName: string
+}
+
+interface Props {
+  provider: CloudProvider
+  resources: TargetResource[]
   onExecute: (playbookYaml: string, inventoryYaml: string) => void
   onBack: () => void
 }
@@ -25,10 +30,7 @@ const cardStyle = {
 
 const AnsiblePlaybook: React.FC<Props> = ({
   provider,
-  resourceInfo,
-  resourceType,
-  resourceAddress,
-  resourceName,
+  resources,
   onExecute,
   onBack,
 }) => {
@@ -40,6 +42,14 @@ const AnsiblePlaybook: React.FC<Props> = ({
   const [generated, setGenerated] = useState(false)
   const [editMode, setEditMode] = useState(false)
 
+  const buildInventory = (): string => {
+    const hosts = resources.map((r) => {
+      const host = r.host || ''
+      return `    ${r.name}:\n      ansible_host: ${host}`
+    })
+    return `all:\n  hosts:\n${hosts.join('\n')}\n`
+  }
+
   const handleGenerate = async () => {
     if (!description.trim()) {
       message.warning('请输入配置需求描述')
@@ -47,12 +57,9 @@ const AnsiblePlaybook: React.FC<Props> = ({
     }
     setGenerating(true)
     try {
-      const result = await generateAnsiblePlaybook(resourceInfo, description, provider)
+      const result = await generateAnsiblePlaybook(resources[0] as unknown as Record<string, unknown>, description, provider)
       setPlaybookYaml(result.playbook_yaml)
-      // 生成 inventory
-      const host = resourceInfo.host || resourceInfo.public_ip || ''
-      const inv = `all:\n  hosts:\n    ${resourceName}:\n      ansible_host: ${host}\n`
-      setInventoryYaml(inv)
+      setInventoryYaml(buildInventory())
       setGenerated(true)
       message.success('Playbook 生成成功！')
     } catch (err: unknown) {
@@ -66,13 +73,14 @@ const AnsiblePlaybook: React.FC<Props> = ({
     if (!playbookYaml.trim()) return
     setSaving(true)
     try {
-      const host = (resourceInfo.host || resourceInfo.public_ip || '') as string
+      const first = resources[0]
+      const host = (first.host) as string
       await saveAnsiblePlaybook(
-        `${resourceType}-${resourceName}`,
+        `${first.resourceType}-${resources.length}hosts`,
         playbookYaml,
         provider,
-        resourceType,
-        resourceAddress,
+        first.resourceType,
+        first.resourceAddress,
         host,
       )
       message.success('Playbook 已保存！')
@@ -96,7 +104,18 @@ const AnsiblePlaybook: React.FC<Props> = ({
       </Title>
 
       <Alert
-        message={`目标资源: ${resourceInfo.host || resourceInfo.public_ip || '未知'} (${resourceName})`}
+        message={
+          <div>
+            <span>目标主机: <strong>{resources.length} 台</strong></span>
+            <div style={{ marginTop: 4 }}>
+              {resources.map((r) => (
+                <Tag key={r.name} icon={<CloudServerOutlined />} color="blue" style={{ marginTop: 2 }}>
+                  {r.host || '无 IP'} ({r.name})
+                </Tag>
+              ))}
+            </div>
+          </div>
+        }
         type="info"
         showIcon
         style={{ marginBottom: 16, borderRadius: 8, background: '#eff6ff', border: '1px solid #bfdbfe' }}
@@ -105,7 +124,7 @@ const AnsiblePlaybook: React.FC<Props> = ({
       {!generated ? (
         <>
           <Text strong style={{ display: 'block', marginBottom: 8, fontSize: 13, color: '#64748b' }}>
-            描述你的配置需求
+            描述你的配置需求（将同时对以上 {resources.length} 台主机执行）
           </Text>
           <TextArea
             rows={4}
@@ -167,15 +186,17 @@ const AnsiblePlaybook: React.FC<Props> = ({
           )}
 
           <Space>
-            <Button
-              type="primary"
-              icon={<PlayCircleOutlined />}
-              onClick={handleExecute}
-              size="large"
-              style={{ borderRadius: 8, background: 'linear-gradient(135deg, #059669, #10b981)', border: 'none', color: '#fff' }}
-            >
-              执行 Playbook
-            </Button>
+            <Tooltip title={`将同时对 ${resources.length} 台主机执行该 Playbook`}>
+              <Button
+                type="primary"
+                icon={<PlayCircleOutlined />}
+                onClick={handleExecute}
+                size="large"
+                style={{ borderRadius: 8, background: 'linear-gradient(135deg, #059669, #10b981)', border: 'none', color: '#fff' }}
+              >
+                执行 Playbook（{resources.length} 台）
+              </Button>
+            </Tooltip>
             <Button
               icon={<SaveOutlined />}
               onClick={handleSave}

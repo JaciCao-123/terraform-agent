@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react'
-import { Card, Typography, Button, Select, Input, Space, message, Divider } from 'antd'
-import { ThunderboltOutlined, CloudServerOutlined, LinkOutlined, WindowsOutlined } from '@ant-design/icons'
+import { Card, Typography, Button, Select, Input, Space, message, Divider, Tag } from 'antd'
+import { ThunderboltOutlined, CloudServerOutlined, WindowsOutlined } from '@ant-design/icons'
 import { getResourceInstances } from '../services/api'
 import type { CloudProvider, ResourceInstance } from '../types'
 
 const { Title, Text } = Typography
+const { TextArea } = Input
 
 interface Props {
-  onSelect: (info: { host: string; name: string; provider: CloudProvider; resourceType: string; resourceAddress: string }) => void
+  onSelect: (resources: Array<{ host: string; name: string; provider: CloudProvider; resourceType: string; resourceAddress: string }>) => void
   onBack: () => void
 }
 
@@ -20,9 +21,9 @@ const cardStyle = {
 const AnsibleResourceSelect: React.FC<Props> = ({ onSelect, onBack }) => {
   const [provider, setProvider] = useState<CloudProvider>('alicloud')
   const [instances, setInstances] = useState<ResourceInstance[]>([])
-  const [selectedInstance, setSelectedInstance] = useState<string | null>(null)
-  const [manualHost, setManualHost] = useState('')
-  const [manualName, setManualName] = useState('')
+  const [selectedInstances, setSelectedInstances] = useState<string[]>([])
+  const [manualHosts, setManualHosts] = useState('')
+  const [manualNamePrefix, setManualNamePrefix] = useState('')
   const [loading, setLoading] = useState(false)
   const [mode, setMode] = useState<'instance' | 'manual'>('instance')
 
@@ -44,37 +45,65 @@ const AnsibleResourceSelect: React.FC<Props> = ({ onSelect, onBack }) => {
 
   const handleContinue = () => {
     if (mode === 'instance') {
-      if (!selectedInstance) {
-        message.warning('请选择一个已有资源')
+      if (selectedInstances.length === 0) {
+        message.warning('请至少选择一个资源')
         return
       }
-      const inst = instances.find((i) => i.address === selectedInstance)
-      if (!inst) return
-      const host = inst.attributes?.public_ip || inst.attributes?.private_ip || ''
-      onSelect({
-        host: host as string,
-        name: inst.name || inst.type || 'target',
-        provider,
-        resourceType: inst.type,
-        resourceAddress: inst.address,
+      const resources = selectedInstances.map((addr) => {
+        const inst = instances.find((i) => i.address === addr)!
+        const host = (inst.attributes?.public_ip as string) || (inst.attributes?.private_ip as string) || ''
+        return {
+          host,
+          name: inst.name || `${inst.type}-${addr.split('.').pop()}`,
+          provider,
+          resourceType: inst.type,
+          resourceAddress: addr,
+        }
       })
+      onSelect(resources)
     } else {
-      if (!manualHost.trim()) {
-        message.warning('请输入目标主机 IP')
+      const lines = manualHosts.trim().split('\n').filter(Boolean)
+      if (lines.length === 0) {
+        message.warning('请输入至少一个主机 IP')
         return
       }
-      if (!manualName.trim()) {
-        message.warning('请输入资源名称')
-        return
-      }
-      onSelect({
-        host: manualHost.trim(),
-        name: manualName.trim(),
-        provider,
-        resourceType: 'manual',
-        resourceAddress: `manual.${manualName.trim()}`,
+      const prefix = manualNamePrefix.trim() || 'host'
+      const resources = lines.map((line, i) => {
+        const ip = line.trim()
+        const name = ip.includes(':') ? ip.split(':')[0].trim() : `${prefix}-${i + 1}`
+        return {
+          host: ip.trim(),
+          name,
+          provider,
+          resourceType: 'manual',
+          resourceAddress: `manual.${name}`,
+        }
       })
+      onSelect(resources)
     }
+  }
+
+  const selectedHostsInfo = () => {
+    if (selectedInstances.length === 0) return null
+    return (
+      <div style={{ marginTop: 12, padding: '8px 12px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0' }}>
+        <Text style={{ fontSize: 12, color: '#166534', fontWeight: 600 }}>
+          已选 {selectedInstances.length} 个目标
+        </Text>
+        {selectedInstances.map((addr) => {
+          const inst = instances.find((i) => i.address === addr)
+          if (!inst) return null
+          const host = (inst.attributes?.public_ip as string) || (inst.attributes?.private_ip as string) || '无 IP'
+          return (
+            <div key={addr} style={{ marginTop: 4, fontSize: 12, color: '#166534' }}>
+              <code>{host}</code>
+              <Tag style={{ marginLeft: 6, fontSize: 10 }}>{inst.type}</Tag>
+              <span style={{ color: '#94a3b8', marginLeft: 4, fontSize: 11 }}>{inst.name}</span>
+            </div>
+          )
+        })}
+      </div>
+    )
   }
 
   return (
@@ -130,55 +159,49 @@ const AnsibleResourceSelect: React.FC<Props> = ({ onSelect, onBack }) => {
       {mode === 'instance' ? (
         <>
           <Text strong style={{ display: 'block', marginBottom: 8, fontSize: 13, color: '#64748b' }}>
-            选择资源（来自 Terraform State）
+            选择资源（可多选，来自 Terraform State）
           </Text>
           <Select
             style={{ width: '100%', borderRadius: 8 }}
-            placeholder={loading ? '加载中...' : '选择一个已有资源'}
-            value={selectedInstance}
-            onChange={setSelectedInstance}
+            mode="multiple"
+            placeholder={loading ? '加载中...' : '选择一个或多个已有资源'}
+            value={selectedInstances}
+            onChange={setSelectedInstances}
             loading={loading}
             options={instances.map((inst) => ({
               label: `${inst.name || inst.type} (${inst.type})${inst.attributes?.public_ip ? ' - ' + inst.attributes.public_ip : ''}${inst.attributes?.private_ip ? ' - ' + inst.attributes.private_ip : ''}`,
               value: inst.address,
             }))}
+            maxTagCount={5}
           />
-          {selectedInstance && (
-            <div style={{ marginTop: 12, padding: '8px 12px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0' }}>
-              {(() => {
-                const inst = instances.find((i) => i.address === selectedInstance)
-                if (!inst) return null
-                const host = (inst.attributes?.public_ip as string) || (inst.attributes?.private_ip as string) || '无 IP'
-                return (
-                  <Text style={{ fontSize: 12, color: '#166534' }}>
-                    目标主机: <code>{host as string}</code> | 类型: <span style={{ background: '#e0f2fe', padding: '0 6px', borderRadius: 4, fontSize: 11 }}>{inst.type}</span>
-                  </Text>
-                )
-              })()}
-            </div>
-          )}
+          {selectedHostsInfo()}
         </>
       ) : (
         <>
           <Text strong style={{ display: 'block', marginBottom: 8, fontSize: 13, color: '#64748b' }}>
-            目标主机 IP
+            目标主机 IP（每行一个，支持批量）
           </Text>
-          <Input
-            placeholder="例如: 47.76.53.232"
-            value={manualHost}
-            onChange={(e) => setManualHost(e.target.value)}
-            prefix={<LinkOutlined />}
-            style={{ borderRadius: 8, marginBottom: 12 }}
+          <TextArea
+            rows={4}
+            placeholder={'47.76.53.232\n47.76.53.233\n192.168.1.10'}
+            value={manualHosts}
+            onChange={(e) => setManualHosts(e.target.value)}
+            style={{ borderRadius: 8, marginBottom: 12, fontFamily: 'monospace' }}
           />
           <Text strong style={{ display: 'block', marginBottom: 8, fontSize: 13, color: '#64748b' }}>
-            资源名称（标识用）
+            主机名称前缀（可选，用于标识）
           </Text>
           <Input
-            placeholder="例如: my-ecs-server"
-            value={manualName}
-            onChange={(e) => setManualName(e.target.value)}
+            placeholder="例如: web-server，将自动生成为 web-server-1, web-server-2..."
+            value={manualNamePrefix}
+            onChange={(e) => setManualNamePrefix(e.target.value)}
             style={{ borderRadius: 8 }}
           />
+          {manualHosts.trim().split('\n').filter(Boolean).length > 0 && (
+            <div style={{ marginTop: 8, fontSize: 12, color: '#94a3b8' }}>
+              共 {manualHosts.trim().split('\n').filter(Boolean).length} 台主机
+            </div>
+          )}
         </>
       )}
 
