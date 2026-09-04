@@ -42,6 +42,12 @@ class Settings(BaseSettings):
     azure_storage_account: str = ""
     azure_storage_container: str = "tfstate"
 
+    # Ansible 配置
+    ssh_private_key_path: str = ""
+    ssh_user: str = "root"
+    ansible_container_image: str = "terraform-agent-ansible-runner:latest"
+    ansible_data_dir: str = "/ansible"
+
     # 后端服务配置
     host: str = "0.0.0.0"
     port: int = 8000

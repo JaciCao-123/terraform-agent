@@ -21,9 +21,13 @@ services:
       - ARM_LOCATION=${ARM_LOCATION:-eastasia}
       - AZURE_STORAGE_ACCOUNT=${AZURE_STORAGE_ACCOUNT:-}
       - AZURE_STORAGE_CONTAINER=${AZURE_STORAGE_CONTAINER:-tfstate}
+      - SSH_PRIVATE_KEY_PATH=${SSH_PRIVATE_KEY_PATH:-}
+      - SSH_USER=${SSH_USER:-root}
+      - ANSIBLE_CONTAINER_IMAGE=${ANSIBLE_CONTAINER_IMAGE:-terraform-agent-ansible-runner:latest}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - backend_data:/tmp/terraform-agent
+      - ansible_data:/ansible
     restart: unless-stopped
     networks:
       - agent-net
@@ -38,8 +42,17 @@ services:
     networks:
       - agent-net
 
+  ansible-runner:
+    build: ./ansible-runner
+    image: terraform-agent-ansible-runner:latest
+    volumes:
+      - ansible_data:/ansible
+    networks:
+      - agent-net
+
 volumes:
   backend_data:
+  ansible_data:
 
 networks:
   agent-net:
