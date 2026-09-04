@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import { Card, Typography, Button, Select, Input, Space, message, Divider, Tag } from 'antd'
 import { ThunderboltOutlined, CloudServerOutlined, WindowsOutlined } from '@ant-design/icons'
 import { getResourceInstances } from '../services/api'
@@ -23,9 +23,22 @@ const AnsibleResourceSelect: React.FC<Props> = ({ onSelect, onBack }) => {
   const [instances, setInstances] = useState<ResourceInstance[]>([])
   const [selectedInstances, setSelectedInstances] = useState<string[]>([])
   const [manualHosts, setManualHosts] = useState('')
-  const [manualNamePrefix, setManualNamePrefix] = useState('')
   const [loading, setLoading] = useState(false)
   const [mode, setMode] = useState<'instance' | 'manual'>('instance')
+
+  // 解析手动输入的 IP 列表，支持 IP:名称 格式
+  const parsedHosts = useMemo(() => {
+    return manualHosts.trim().split('\n').filter(Boolean).map((line, i) => {
+      const trimmed = line.trim()
+      // 支持两种格式: "IP:名称" 或 "IP"
+      if (trimmed.includes(':')) {
+        const [ip, ...nameParts] = trimmed.split(':')
+        const name = nameParts.join(':').trim()
+        return { ip: ip.trim(), name: name || `host-${i + 1}` }
+      }
+      return { ip: trimmed, name: `host-${i + 1}` }
+    })
+  }, [manualHosts])
 
   useEffect(() => {
     loadInstances()
@@ -62,23 +75,17 @@ const AnsibleResourceSelect: React.FC<Props> = ({ onSelect, onBack }) => {
       })
       onSelect(resources)
     } else {
-      const lines = manualHosts.trim().split('\n').filter(Boolean)
-      if (lines.length === 0) {
+      if (parsedHosts.length === 0) {
         message.warning('请输入至少一个主机 IP')
         return
       }
-      const prefix = manualNamePrefix.trim() || 'host'
-      const resources = lines.map((line, i) => {
-        const ip = line.trim()
-        const name = ip.includes(':') ? ip.split(':')[0].trim() : `${prefix}-${i + 1}`
-        return {
-          host: ip.trim(),
-          name,
-          provider,
-          resourceType: 'manual',
-          resourceAddress: `manual.${name}`,
-        }
-      })
+      const resources = parsedHosts.map(({ ip, name }) => ({
+        host: ip,
+        name,
+        provider,
+        resourceType: 'manual',
+        resourceAddress: `manual.${name}`,
+      }))
       onSelect(resources)
     }
   }
@@ -179,27 +186,38 @@ const AnsibleResourceSelect: React.FC<Props> = ({ onSelect, onBack }) => {
       ) : (
         <>
           <Text strong style={{ display: 'block', marginBottom: 8, fontSize: 13, color: '#64748b' }}>
-            目标主机 IP（每行一个，支持批量）
+            目标主机（每行一个，支持 {`IP:名称`} 格式）
           </Text>
           <TextArea
             rows={4}
-            placeholder={'47.76.53.232\n47.76.53.233\n192.168.1.10'}
+            placeholder={'47.76.53.232:web-01\n47.76.53.233:web-02\n47.76.53.234:db-01\n47.76.53.235'}
             value={manualHosts}
             onChange={(e) => setManualHosts(e.target.value)}
             style={{ borderRadius: 8, marginBottom: 12, fontFamily: 'monospace' }}
           />
-          <Text strong style={{ display: 'block', marginBottom: 8, fontSize: 13, color: '#64748b' }}>
-            主机名称前缀（可选，用于标识）
-          </Text>
-          <Input
-            placeholder="例如: web-server，将自动生成为 web-server-1, web-server-2..."
-            value={manualNamePrefix}
-            onChange={(e) => setManualNamePrefix(e.target.value)}
-            style={{ borderRadius: 8 }}
-          />
-          {manualHosts.trim().split('\n').filter(Boolean).length > 0 && (
-            <div style={{ marginTop: 8, fontSize: 12, color: '#94a3b8' }}>
-              共 {manualHosts.trim().split('\n').filter(Boolean).length} 台主机
+          {parsedHosts.length > 0 && (
+            <div style={{ marginBottom: 12, borderRadius: 8, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+              <div style={{ padding: '6px 12px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', fontSize: 12, color: '#64748b', fontWeight: 600 }}>
+                主机映射预览（共 {parsedHosts.length} 台）
+              </div>
+              {parsedHosts.map(({ ip, name }, i) => (
+                <div
+                  key={i}
+                  style={{
+                    padding: '6px 12px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    borderBottom: i < parsedHosts.length - 1 ? '1px solid #f1f5f9' : 'none',
+                    fontSize: 13,
+                    fontFamily: 'monospace',
+                  }}
+                >
+                  <span style={{ color: '#1e293b' }}>{ip}</span>
+                  <span style={{ color: '#94a3b8' }}>→</span>
+                  <span style={{ color: '#2563eb', fontWeight: 600 }}>{name}</span>
+                </div>
+              ))}
             </div>
           )}
         </>
