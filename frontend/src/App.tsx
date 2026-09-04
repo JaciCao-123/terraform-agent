@@ -1,11 +1,14 @@
 import React, { useState, useCallback } from 'react'
 import { Layout, Typography, Steps, message, ConfigProvider, theme, Button, Result } from 'antd'
-import { CloudServerOutlined, ReloadOutlined } from '@ant-design/icons'
+import { CloudServerOutlined, ReloadOutlined, ImportOutlined, ThunderboltOutlined } from '@ant-design/icons'
 import ResourceSelector from './components/ResourceSelector'
 import ConfigDialog from './components/ConfigDialog'
 import CodeReview from './components/CodeReview'
 import ExecutionPanel from './components/ExecutionPanel'
 import TerminalView from './components/TerminalView'
+import AnsiblePlaybook from './components/AnsiblePlaybook'
+import AnsibleExecution from './components/AnsibleExecution'
+import ResourceImportDialog from './components/ResourceImportDialog'
 import type { OperationType, ResourceSchema, CloudProvider } from './types'
 
 const { Header, Content } = Layout
@@ -26,6 +29,16 @@ const App: React.FC = () => {
   const [executionStatus, setExecutionStatus] = useState<'idle' | 'running' | 'success' | 'error'>('idle')
   const [targetResourceAddress, setTargetResourceAddress] = useState<string>('')
   const [targetResourceId, setTargetResourceId] = useState<string>('')
+
+  // Ansible 流程状态
+  const [showAnsible, setShowAnsible] = useState(false)
+  const [ansibleStep, setAnsibleStep] = useState<'playbook' | 'execute'>('playbook')
+  const [ansiblePlaybookYaml, setAnsiblePlaybookYaml] = useState('')
+  const [ansibleInventoryYaml, setAnsibleInventoryYaml] = useState('')
+  const [resourceInfo, setResourceInfo] = useState<Record<string, unknown>>({})
+
+  // 存量导入对话框
+  const [importDialogOpen, setImportDialogOpen] = useState(false)
 
   const updateStep = useCallback((step: number, status: StepStatus) => {
     setStepStatus((prev) => {
@@ -208,11 +221,24 @@ const App: React.FC = () => {
           </div>
 
           {currentStep === 0 && (
-            <ResourceSelector
-              operationType={operationType}
-              onOperationTypeChange={setOperationType}
-              onResourceSelected={handleResourceSelected}
-            />
+            <>
+              <ResourceSelector
+                operationType={operationType}
+                onOperationTypeChange={setOperationType}
+                onResourceSelected={handleResourceSelected}
+              />
+              <div style={{ textAlign: 'center', marginTop: 16 }}>
+                <Button
+                  type="dashed"
+                  icon={<ImportOutlined />}
+                  onClick={() => setImportDialogOpen(true)}
+                  size="large"
+                  style={{ borderRadius: 8, borderColor: '#2563eb', color: '#2563eb' }}
+                >
+                  导入存量资源
+                </Button>
+              </div>
+            </>
           )}
 
           {currentStep === 1 && resourceSchema && (
@@ -266,7 +292,7 @@ const App: React.FC = () => {
             />
           )}
 
-          {currentStep === 4 && (
+          {currentStep === 4 && !showAnsible && (
             <div
               style={{
                 background: '#ffffff',
@@ -289,15 +315,36 @@ const App: React.FC = () => {
                   </span>
                 }
                 extra={
-                  <Button
-                    type="primary"
-                    icon={<ReloadOutlined />}
-                    onClick={handleReset}
-                    size="large"
-                    style={{ borderRadius: 8, background: 'linear-gradient(135deg, #2563eb, #6366f1)', border: 'none', color: '#fff' }}
-                  >
-                    重新开始
-                  </Button>
+                  <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+                    {executionStatus === 'success' && (operationType === 'create' || operationType === 'update') && (
+                      <Button
+                        type="primary"
+                        icon={<ThunderboltOutlined />}
+                        onClick={() => {
+                          setResourceInfo({
+                            name: resourceType || 'target',
+                            host: '',
+                            public_ip: '',
+                          })
+                          setShowAnsible(true)
+                          setAnsibleStep('playbook')
+                        }}
+                        size="large"
+                        style={{ borderRadius: 8, background: 'linear-gradient(135deg, #059669, #10b981)', border: 'none', color: '#fff' }}
+                      >
+                        使用 Ansible 配置
+                      </Button>
+                    )}
+                    <Button
+                      type="primary"
+                      icon={<ReloadOutlined />}
+                      onClick={handleReset}
+                      size="large"
+                      style={{ borderRadius: 8, background: 'linear-gradient(135deg, #2563eb, #6366f1)', border: 'none', color: '#fff' }}
+                    >
+                      重新开始
+                    </Button>
+                  </div>
                 }
               />
               <div style={{ marginTop: 16 }}>
@@ -308,6 +355,41 @@ const App: React.FC = () => {
               </div>
             </div>
           )}
+
+          {/* Ansible Playbook 流程 */}
+          {showAnsible && ansibleStep === 'playbook' && (
+            <AnsiblePlaybook
+              provider={cloudProvider}
+              resourceInfo={resourceInfo}
+              resourceType={resourceType || ''}
+              resourceAddress={targetResourceAddress}
+              resourceName={resourceType || ''}
+              onExecute={(playbookYaml, inventoryYaml) => {
+                setAnsiblePlaybookYaml(playbookYaml)
+                setAnsibleInventoryYaml(inventoryYaml)
+                setAnsibleStep('execute')
+              }}
+              onBack={() => setShowAnsible(false)}
+            />
+          )}
+
+          {showAnsible && ansibleStep === 'execute' && (
+            <AnsibleExecution
+              playbookYaml={ansiblePlaybookYaml}
+              inventoryYaml={ansibleInventoryYaml}
+              onComplete={() => {
+                setShowAnsible(false)
+                message.success('Ansible 配置完成！')
+              }}
+              onBack={() => setAnsibleStep('playbook')}
+            />
+          )}
+
+          {/* 存量资源导入对话框 */}
+          <ResourceImportDialog
+            open={importDialogOpen}
+            onClose={() => setImportDialogOpen(false)}
+          />
         </Content>
       </Layout>
     </ConfigProvider>

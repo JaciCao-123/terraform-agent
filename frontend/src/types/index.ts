@@ -81,3 +81,51 @@ export type OperationType = 'create' | 'destroy' | 'update'
 
 /** 操作步骤 */
 export type StepType = 'select' | 'configure' | 'review' | 'plan' | 'apply' | 'result'
+
+/** ── Ansible 相关类型 ── */
+
+/** Ansible Playbook 记录 */
+export interface AnsiblePlaybook {
+  id: string
+  name: string
+  playbook_yaml: string
+  provider: CloudProvider
+  resource_type: string
+  resource_address: string
+  target_host: string
+  created_at: string
+  updated_at: string
+}
+
+/** Ansible 执行记录 */
+export interface AnsibleExecution {
+  id: string
+  playbook_id: string
+  playbook_name: string
+  inventory_yaml: string
+  status: 'running' | 'success' | 'failed'
+  logs: string[]
+  stats: Record<string, number>
+  started_at: string
+  completed_at?: string
+}
+
+/** ── 存量导入相关类型 ── */
+
+/** 扫描到的存量资源 */
+export interface ImportResource {
+  id: string
+  name: string
+  type: string
+  region: string
+  status?: string
+  [key: string]: unknown
+}
+
+/** 扫描结果 */
+export interface ScanResult {
+  provider: CloudProvider
+  resource_type: string
+  total: number
+  resources: ImportResource[]
+}

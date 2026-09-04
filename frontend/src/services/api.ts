@@ -10,6 +10,7 @@ import type {
   GenerateResponse,
   SSEMessage,
   CloudProvider,
+  ScanResult,
 } from '../types'
 
 const API_BASE = '/api'
@@ -213,4 +214,85 @@ function startSSE(
   return () => {
     cancelled = true
   }
+}
+
+/** ── Ansible API ── */
+
+/** 调用 LLM 生成 Ansible Playbook */
+export async function generateAnsiblePlaybook(
+  resourceInfo: Record<string, unknown>,
+  userDescription: string,
+  provider: CloudProvider = 'alicloud',
+): Promise<{ playbook_yaml: string }> {
+  return request('/ansible/generate', {
+    method: 'POST',
+    body: JSON.stringify({ resource_info: resourceInfo, user_description: userDescription, provider }),
+  })
+}
+
+/** 执行 Ansible Playbook（SSE 流） */
+export function executeAnsiblePlaybook(
+  playbookYaml: string,
+  inventoryYaml: string,
+  onMessage: (msg: SSEMessage) => void,
+  onError: (err: Error) => void,
+  onComplete: () => void,
+): () => void {
+  return startSSE('/ansible/execute', { playbook_yaml: playbookYaml, inventory_yaml: inventoryYaml }, onMessage, onError, onComplete)
+}
+
+/** 保存 Ansible Playbook 记录 */
+export async function saveAnsiblePlaybook(
+  name: string,
+  playbookYaml: string,
+  provider: CloudProvider,
+  resourceType: string,
+  resourceAddress: string,
+  targetHost: string,
+): Promise<{ id: string }> {
+  return request('/ansible/playbooks', {
+    method: 'POST',
+    body: JSON.stringify({ name, playbook_yaml: playbookYaml, provider, resource_type: resourceType, resource_address: resourceAddress, target_host: targetHost }),
+  })
+}
+
+/** 获取历史 Playbook 列表 */
+export async function listAnsiblePlaybooks(): Promise<{ playbooks: Array<{ id: string; name: string; provider: string; resource_type: string; target_host: string; created_at: string }> }> {
+  return request('/ansible/playbooks')
+}
+
+/** 获取单个 Playbook 详情 */
+export async function getAnsiblePlaybook(id: string): Promise<{ playbook_yaml: string }> {
+  return request(`/ansible/playbooks/${id}`)
+}
+
+/** 生成 Ansible Inventory */
+export async function buildAnsibleInventory(hosts: Array<Record<string, unknown>>): Promise<{ inventory_yaml: string }> {
+  return request('/ansible/build-inventory', {
+    method: 'POST',
+    body: JSON.stringify({ hosts }),
+  })
+}
+
+/** ── 存量资源导入 API ── */
+
+/** 扫描存量资源列表 */
+export async function scanImportResources(provider: CloudProvider, resourceType: string): Promise<ScanResult> {
+  return request(`/import/scan?provider=${provider}&resource_type=${resourceType}`)
+}
+
+/** 获取支持的扫描资源类型 */
+export async function getImportSupportedTypes(provider: CloudProvider): Promise<{ supported_types: string[] }> {
+  return request(`/import/supported-types?provider=${provider}`)
+}
+
+/** 执行批量导入（SSE 流） */
+export function executeImportResources(
+  provider: CloudProvider,
+  resources: Array<Record<string, unknown>>,
+  onMessage: (msg: SSEMessage) => void,
+  onError: (err: Error) => void,
+  onComplete: () => void,
+): () => void {
+  return startSSE('/import/execute', { provider, resources }, onMessage, onError, onComplete)
 }
