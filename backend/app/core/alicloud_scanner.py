@@ -143,13 +143,18 @@ class AlicloudScanner(ResourceScanner):
             "created_at": item.get("CreationTime", ""),
         }
 
-    # ── Redis ──
+    # ── Redis (可选依赖，aliyun-python-sdk-redis 未发布到 PyPI) ──
 
     def _scan_redis(self) -> list[dict]:
-        from aliyunsdkredis.request.v20150101 import DescribeInstancesRequest
-        req = DescribeInstancesRequest.DescribeInstancesRequest()
-        req.set_PageSize(100)
-        return self._do_request(req, "Instances", "KVStoreInstance", self._parse_redis)
+        try:
+            from aliyunsdkredis.request.v20150101 import DescribeInstancesRequest
+            req = DescribeInstancesRequest.DescribeInstancesRequest()
+            req.set_PageSize(100)
+            return self._do_request(req, "Instances", "KVStoreInstance", self._parse_redis)
+        except ImportError:
+            import logging
+            logging.getLogger(__name__).warning("aliyun-python-sdk-redis 未安装，跳过 Redis 资源扫描")
+            return []
 
     def _parse_redis(self, item: dict) -> dict:
         return {
