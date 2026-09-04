@@ -39,6 +39,7 @@ export interface ResourceInstance {
   display_name?: string
   address: string
   provider?: string
+  attributes?: Record<string, unknown>
 }
 
 /** 生成 Terraform 配置的请求 */

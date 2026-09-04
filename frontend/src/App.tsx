@@ -8,6 +8,7 @@ import ExecutionPanel from './components/ExecutionPanel'
 import TerminalView from './components/TerminalView'
 import AnsiblePlaybook from './components/AnsiblePlaybook'
 import AnsibleExecution from './components/AnsibleExecution'
+import AnsibleResourceSelect from './components/AnsibleResourceSelect'
 import ResourceImportDialog from './components/ResourceImportDialog'
 import type { OperationType, ResourceSchema, CloudProvider } from './types'
 
@@ -39,6 +40,11 @@ const App: React.FC = () => {
 
   // 存量导入对话框
   const [importDialogOpen, setImportDialogOpen] = useState(false)
+
+  // Ansible 独立入口
+  const [showAnsibleStandalone, setShowAnsibleStandalone] = useState(false)
+  const [ansibleStandaloneStep, setAnsibleStandaloneStep] = useState<'select' | 'playbook' | 'execute'>('select')
+  const [ansibleStandaloneInfo, setAnsibleStandaloneInfo] = useState<Record<string, unknown>>({})
 
   const updateStep = useCallback((step: number, status: StepStatus) => {
     setStepStatus((prev) => {
@@ -204,6 +210,19 @@ const App: React.FC = () => {
               Terraform Agent
             </div>
             <div style={{ fontSize: 10, color: '#93c5fd', lineHeight: 1.2 }}>多云资源管理平台</div>
+          </div>
+          <div style={{ marginLeft: 'auto' }}>
+            <Button
+              type="text"
+              icon={<ThunderboltOutlined />}
+              onClick={() => {
+                setShowAnsibleStandalone(true)
+                setAnsibleStandaloneStep('select')
+              }}
+              style={{ color: '#93c5fd', fontSize: 13 }}
+            >
+              Playbook
+            </Button>
           </div>
         </Header>
         <Content style={{ padding: '16px 12px 24px 12px', maxWidth: 800, margin: '0 auto', width: '100%' }}>
@@ -390,6 +409,51 @@ const App: React.FC = () => {
             open={importDialogOpen}
             onClose={() => setImportDialogOpen(false)}
           />
+
+          {/* Ansible 独立入口 */}
+          {showAnsibleStandalone && (
+            <>
+              {ansibleStandaloneStep === 'select' && (
+                <AnsibleResourceSelect
+                  onSelect={(info) => {
+                    setAnsibleStandaloneInfo(info as unknown as Record<string, unknown>)
+                    setAnsibleStandaloneStep('playbook')
+                  }}
+                  onBack={() => {
+                    setShowAnsibleStandalone(false)
+                    setAnsibleStandaloneStep('select')
+                  }}
+                />
+              )}
+              {ansibleStandaloneStep === 'playbook' && (
+                <AnsiblePlaybook
+                  provider={ansibleStandaloneInfo.provider as CloudProvider}
+                  resourceInfo={ansibleStandaloneInfo}
+                  resourceType={ansibleStandaloneInfo.resourceType as string}
+                  resourceAddress={ansibleStandaloneInfo.resourceAddress as string}
+                  resourceName={ansibleStandaloneInfo.name as string}
+                  onExecute={(playbookYaml, inventoryYaml) => {
+                    setAnsiblePlaybookYaml(playbookYaml)
+                    setAnsibleInventoryYaml(inventoryYaml)
+                    setAnsibleStandaloneStep('execute')
+                  }}
+                  onBack={() => setAnsibleStandaloneStep('select')}
+                />
+              )}
+              {ansibleStandaloneStep === 'execute' && (
+                <AnsibleExecution
+                  playbookYaml={ansiblePlaybookYaml}
+                  inventoryYaml={ansibleInventoryYaml}
+                  onComplete={() => {
+                    setShowAnsibleStandalone(false)
+                    setAnsibleStandaloneStep('select')
+                    message.success('Ansible 配置完成！')
+                  }}
+                  onBack={() => setAnsibleStandaloneStep('playbook')}
+                />
+              )}
+            </>
+          )}
         </Content>
       </Layout>
     </ConfigProvider>
