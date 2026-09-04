@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Card, Form, Input, InputNumber, Select, AutoComplete, Button, Typography, message, Spin, Alert, Space, Tooltip } from 'antd'
-import { EditOutlined, ThunderboltOutlined, SaveOutlined, EyeOutlined } from '@ant-design/icons'
+import { EditOutlined, ThunderboltOutlined, SaveOutlined, EyeOutlined, CopyOutlined } from '@ant-design/icons'
 import { generateTf, generateDestroyTf, generateUpdateTf, getResourceConfig } from '../services/api'
 import type { OperationType, ResourceSchema, CloudProvider } from '../types'
 
@@ -253,16 +253,29 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
               title={<span style={{ fontSize: 13, fontWeight: 600, color: '#475569' }}>生成的 Terraform 配置</span>}
               extra={
                 !editingTf ? (
-                  <Tooltip title="编辑配置">
-                    <Button
-                      size="small"
-                      icon={<EditOutlined />}
-                      onClick={() => setEditingTf(true)}
-                      style={{ borderRadius: 6, fontSize: 12 }}
-                    >
-                      编辑
-                    </Button>
-                  </Tooltip>
+                  <Space size={4}>
+                    <Tooltip title="复制到剪贴板">
+                      <Button
+                        size="small"
+                        icon={<CopyOutlined />}
+                        onClick={() => {
+                          navigator.clipboard.writeText(generatedTf || '')
+                          message.success('已复制到剪贴板')
+                        }}
+                        style={{ borderRadius: 6, fontSize: 12 }}
+                      />
+                    </Tooltip>
+                    <Tooltip title="编辑配置">
+                      <Button
+                        size="small"
+                        icon={<EditOutlined />}
+                        onClick={() => setEditingTf(true)}
+                        style={{ borderRadius: 6, fontSize: 12 }}
+                      >
+                        编辑
+                      </Button>
+                    </Tooltip>
+                  </Space>
                 ) : (
                   <Space size={4}>
                     <Tooltip title="保存修改">
