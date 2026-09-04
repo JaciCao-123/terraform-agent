@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { Card, Form, Input, InputNumber, Select, AutoComplete, Button, Typography, message, Spin, Alert, Space } from 'antd'
-import { EditOutlined, ThunderboltOutlined } from '@ant-design/icons'
+import { Card, Form, Input, InputNumber, Select, AutoComplete, Button, Typography, message, Spin, Alert, Space, Tooltip } from 'antd'
+import { EditOutlined, ThunderboltOutlined, SaveOutlined, EyeOutlined } from '@ant-design/icons'
 import { generateTf, generateDestroyTf, generateUpdateTf, getResourceConfig } from '../services/api'
 import type { OperationType, ResourceSchema, CloudProvider } from '../types'
 
@@ -31,6 +31,8 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
   const [loadingConfig, setLoadingConfig] = useState(false)
   const [generatedTf, setGeneratedTf] = useState<string | null>(null)
   const [userDescription, setUserDescription] = useState('')
+  const [editingTf, setEditingTf] = useState(false)
+  const [editableTfContent, setEditableTfContent] = useState('')
 
   useEffect(() => {
     if (operationType === 'update' && resourceType && resourceId) {
@@ -70,6 +72,8 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
         user_description: userDescription || undefined,
       })
       setGeneratedTf(result.tf_content)
+      setEditableTfContent(result.tf_content)
+      setEditingTf(false)
       message.success(userDescription ? '结合自然语言描述，配置生成成功！' : 'Terraform 配置生成成功！')
     } catch (err: unknown) {
       if (err instanceof Error) message.error(err.message || '生成失败')
@@ -85,6 +89,8 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
       const params = values as Record<string, unknown>
       const result = await generateUpdateTf(schema.resource_type, targetResourceAddress || '', params, provider, userDescription || undefined)
       setGeneratedTf(result.tf_content)
+      setEditableTfContent(result.tf_content)
+      setEditingTf(false)
       message.success(userDescription ? '结合自然语言描述，更新配置已生成' : '更新配置已生成')
     } catch (err: unknown) {
       if (err instanceof Error) message.error(err.message || '生成失败')
@@ -99,6 +105,8 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
     try {
       const result = await generateDestroyTf(targetResourceAddress, provider, userDescription || undefined)
       setGeneratedTf(result.tf_content)
+      setEditableTfContent(result.tf_content)
+      setEditingTf(false)
       if (!result.tf_content) {
         message.info('使用 terraform state 直接销毁，无需额外配置')
       } else {
@@ -243,27 +251,89 @@ const ConfigDialog: React.FC<Props> = ({ operationType, schema, resourceType, re
           {generatedTf && (
             <Card
               title={<span style={{ fontSize: 13, fontWeight: 600, color: '#475569' }}>生成的 Terraform 配置</span>}
+              extra={
+                !editingTf ? (
+                  <Tooltip title="编辑配置">
+                    <Button
+                      size="small"
+                      icon={<EditOutlined />}
+                      onClick={() => setEditingTf(true)}
+                      style={{ borderRadius: 6, fontSize: 12 }}
+                    >
+                      编辑
+                    </Button>
+                  </Tooltip>
+                ) : (
+                  <Space size={4}>
+                    <Tooltip title="保存修改">
+                      <Button
+                        size="small"
+                        type="primary"
+                        icon={<SaveOutlined />}
+                        onClick={() => {
+                          setEditingTf(false)
+                          setGeneratedTf(editableTfContent)
+                        }}
+                        style={{ borderRadius: 6, fontSize: 12 }}
+                      >
+                        保存
+                      </Button>
+                    </Tooltip>
+                    <Tooltip title="取消编辑">
+                      <Button
+                        size="small"
+                        icon={<EyeOutlined />}
+                        onClick={() => {
+                          setEditableTfContent(generatedTf)
+                          setEditingTf(false)
+                        }}
+                        style={{ borderRadius: 6, fontSize: 12 }}
+                      >
+                        取消
+                      </Button>
+                    </Tooltip>
+                  </Space>
+                )
+              }
               size="small"
               style={{ marginTop: 24, borderRadius: 8, border: '1px solid #e2e8f0', background: '#f8fafc' }}
             >
-              <pre
-                style={{
-                  fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-                  fontSize: 12,
-                  maxHeight: 300,
-                  overflow: 'auto',
-                  margin: 0,
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-all',
-                  color: '#1e293b',
-                  background: '#f1f5f9',
-                  padding: 12,
-                  borderRadius: 6,
-                  border: '1px solid #e2e8f0',
-                }}
-              >
-                {generatedTf}
-              </pre>
+              {editingTf ? (
+                <TextArea
+                  value={editableTfContent}
+                  onChange={(e) => setEditableTfContent(e.target.value)}
+                  rows={12}
+                  style={{
+                    fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                    fontSize: 12,
+                    lineHeight: 1.6,
+                    background: '#1e293b',
+                    color: '#e2e8f0',
+                    border: '1px solid #334155',
+                    borderRadius: 6,
+                    padding: 12,
+                  }}
+                />
+              ) : (
+                <pre
+                  style={{
+                    fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                    fontSize: 12,
+                    maxHeight: 300,
+                    overflow: 'auto',
+                    margin: 0,
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-all',
+                    color: '#1e293b',
+                    background: '#f1f5f9',
+                    padding: 12,
+                    borderRadius: 6,
+                    border: '1px solid #e2e8f0',
+                  }}
+                >
+                  {generatedTf}
+                </pre>
+              )}
               <Space style={{ marginTop: 16 }}>
                 <Button type="primary" size="large" onClick={handleConfirm} style={{ borderRadius: 8, minWidth: 140, background: 'linear-gradient(135deg, #2563eb, #6366f1)', border: 'none', color: '#fff' }}>
                   确认，下一步 Plan
