@@ -226,20 +226,53 @@ const App: React.FC = () => {
           </div>
         </Header>
         <Content style={{ padding: '16px 12px 24px 12px', maxWidth: 800, margin: '0 auto', width: '100%' }}>
-          <div
-            style={{
-              background: '#ffffff',
-              borderRadius: 14,
-              padding: '16px 24px',
-              marginBottom: 24,
-              border: '1px solid #e2e8f0',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-            }}
-          >
-            <Steps current={currentStep} items={stepItems} style={{ gap: 0 }} />
-          </div>
+          {!showAnsibleStandalone && (
+            <div
+              style={{
+                background: '#ffffff',
+                borderRadius: 14,
+                padding: '16px 24px',
+                marginBottom: 24,
+                border: '1px solid #e2e8f0',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+              }}
+            >
+              <Steps current={currentStep} items={stepItems} style={{ gap: 0 }} />
+            </div>
+          )}
 
-          {currentStep === 0 && (
+          {showAnsibleStandalone && (
+            <div
+              style={{
+                background: '#ffffff',
+                borderRadius: 14,
+                padding: '12px 20px',
+                marginBottom: 24,
+                border: '1px solid #e2e8f0',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <span style={{ color: '#1e293b', fontWeight: 600, fontSize: 15 }}>
+                <ThunderboltOutlined style={{ marginRight: 8, color: '#059669' }} />
+                Ansible Playbook
+              </span>
+              <Button
+                size="small"
+                onClick={() => {
+                  setShowAnsibleStandalone(false)
+                  setAnsibleStandaloneStep('select')
+                }}
+                style={{ borderRadius: 6 }}
+              >
+                返回主页面
+              </Button>
+            </div>
+          )}
+
+          {!showAnsibleStandalone && currentStep === 0 && (
             <>
               <ResourceSelector
                 operationType={operationType}
@@ -260,7 +293,7 @@ const App: React.FC = () => {
             </>
           )}
 
-          {currentStep === 1 && resourceSchema && (
+          {!showAnsibleStandalone && currentStep === 1 && resourceSchema && (
             <ConfigDialog
               operationType={operationType}
               resourceType={resourceType}
@@ -277,7 +310,7 @@ const App: React.FC = () => {
             />
           )}
 
-          {currentStep === 2 && (
+          {!showAnsibleStandalone && currentStep === 2 && (
             <CodeReview
               tfContent={tfContent}
               operationType={operationType}
@@ -294,7 +327,7 @@ const App: React.FC = () => {
             />
           )}
 
-          {currentStep === 3 && (
+          {!showAnsibleStandalone && currentStep === 3 && (
             <ExecutionPanel
               tfContent={tfContent}
               operationType={operationType}
@@ -311,7 +344,7 @@ const App: React.FC = () => {
             />
           )}
 
-          {currentStep === 4 && !showAnsible && (
+          {!showAnsibleStandalone && currentStep === 4 && (
             <div
               style={{
                 background: '#ffffff',
