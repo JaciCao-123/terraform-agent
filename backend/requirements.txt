@@ -9,24 +9,24 @@ aiofiles==24.1.0
 pyyaml==6.0.2
 httpx<0.28
 
-# 云 SDK（用于存量资源扫描）
-aliyun-python-sdk-core==2.16.0
-aliyun-python-sdk-ecs==4.24.84
-aliyun-python-sdk-rds==2.7.36
-aliyun-python-sdk-slb==3.5.0
-aliyun-python-sdk-vpc==3.0.34
-aliyun-python-sdk-oss==2.2.0
-aliyun-python-sdk-redis==2.1.0
-aliyun-python-sdk-cdn==3.1.8
-aliyun-python-sdk-nas==1.1.2
-oss2==2.18.6
-azure-identity==1.19.0
-azure-mgmt-compute==33.1.0
-azure-mgmt-resource==23.2.0
-azure-mgmt-network==26.0.0
-azure-mgmt-rdbms==10.2.0b16
-azure-mgmt-storage==21.2.1
-azure-mgmt-containerservice==33.1.0
-azure-mgmt-redis==14.4.0
-azure-mgmt-cdn==13.1.0
-azure-mgmt-web==8.0.0
+# 云 SDK（用于存量资源扫描，宽松版本约束）
+aliyun-python-sdk-core>=2.16.0
+aliyun-python-sdk-ecs>=4.24.0
+aliyun-python-sdk-rds>=2.7.0
+aliyun-python-sdk-slb>=3.5.0
+aliyun-python-sdk-vpc>=3.0.0
+aliyun-python-sdk-oss>=2.2.0
+aliyun-python-sdk-redis>=2.1.0
+aliyun-python-sdk-cdn>=3.1.0
+aliyun-python-sdk-nas>=1.1.0
+oss2>=2.18.6
+azure-identity>=1.19.0
+azure-mgmt-compute>=33.0.0
+azure-mgmt-resource>=23.0.0
+azure-mgmt-network>=26.0.0
+azure-mgmt-rdbms>=10.2.0
+azure-mgmt-storage>=21.0.0
+azure-mgmt-containerservice>=33.0.0
+azure-mgmt-redis>=14.0.0
+azure-mgmt-cdn>=13.0.0
+azure-mgmt-web>=8.0.0
