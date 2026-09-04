@@ -268,6 +268,108 @@ class TerraformManager:
         )
         return analysis.strip()
 
+    async def import_resources(
+        self,
+        resources: list[dict],
+        provider: str = "alicloud",
+    ) -> AsyncGenerator[str, None]:
+        """
+        批量导入存量资源到 Terraform state。
+
+        对每个资源执行：
+        1. 生成最小化 HCL 骨架
+        2. terraform import
+        3. terraform show 获取完整配置
+        4. LLM 整理完整 HCL
+
+        Args:
+            resources: 存量资源列表，每项包含 id、type、name、region
+            provider: 云平台
+
+        Yields:
+            导入进度日志
+        """
+        for i, resource in enumerate(resources):
+            res_type = resource["type"]
+            res_id = resource["id"]
+            res_name = resource.get("name", res_id)
+            tf_resource = self.get_terraform_resource(res_type, provider)
+            if not tf_resource:
+                yield f"[SKIP] 未知资源类型: {res_type} (provider: {provider})\n"
+                continue
+
+            resource_address = f'{tf_resource}.{res_name.replace("-", "_").replace(".", "_")}'
+
+            yield f"\n[{i + 1}/{len(resources)}] 正在导入 {res_type}: {res_name} ({res_id})\n"
+
+            # 1. 生成最小化 HCL 骨架
+            hcl_skeleton = self._build_import_skeleton(tf_resource, res_name)
+            yield f"[INFO] 生成 HCL 骨架...\n"
+
+            # 2. 执行 terraform import
+            import_logs = []
+            error_detected = False
+            async for line in self.docker.exec_import_resource(
+                hcl_skeleton=hcl_skeleton,
+                resource_address=resource_address,
+                resource_id=res_id,
+                provider=provider,
+            ):
+                import_logs.append(line)
+                yield line
+                if "[ERROR]" in line:
+                    error_detected = True
+
+            if error_detected:
+                yield f"[WARN] 资源 {res_name} 导入失败，跳过\n"
+                continue
+
+            yield f"[INFO] 资源 {res_name} 导入成功\n"
+
+            # 3. terraform show 获取完整配置（用 LLM 整理）
+            yield f"[INFO] 正在获取完整配置...\n"
+            try:
+                show_output = await self.docker.exec_show_resource(
+                    resource_address=resource_address,
+                    provider=provider,
+                )
+                if show_output:
+                    # 用 LLM 将 show 输出整理成完整 HCL
+                    from app.llm.prompt_templates import build_terraform_show_to_hcl_prompt
+                    system_prompt, user_prompt = build_terraform_show_to_hcl_prompt(
+                        show_output=show_output,
+                        resource_type=res_type,
+                        provider=provider,
+                    )
+                    full_hcl = await self.llm.generate(
+                        prompt=user_prompt,
+                        system_prompt=system_prompt,
+                        temperature=0.1,
+                    )
+                    # 保存完整 HCL 配置
+                    self._save_imported_hcl(res_name, full_hcl.strip(), provider)
+                    yield f"[INFO] 完整资源配置已生成\n"
+            except Exception as e:
+                yield f"[WARN] 获取完整配置失败: {e}\n"
+
+        yield "\n[INFO] 批量导入完成\n"
+
+    def _build_import_skeleton(self, tf_resource: str, res_name: str) -> str:
+        """生成最小化的 HCL 配置骨架，用于 terraform import"""
+        safe_name = res_name.replace("-", "_").replace(".", "_")
+        return f"""resource "{tf_resource}" "{safe_name}" {{
+  # 此资源由 terraform import 导入，配置由 LLM 自动生成
+}}
+"""
+
+    def _save_imported_hcl(self, res_name: str, hcl_content: str, provider: str):
+        """保存导入后的完整 HCL 配置到文件"""
+        import_dir = os.path.join(settings.terraform_work_dir, "imported", provider)
+        os.makedirs(import_dir, exist_ok=True)
+        file_path = os.path.join(import_dir, f"{res_name}.tf")
+        with open(file_path, "w") as f:
+            f.write(hcl_content)
+
     def log_operation(
         self,
         operation_type: str,

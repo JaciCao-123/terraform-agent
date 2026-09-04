@@ -664,3 +664,45 @@ def build_ansible_fix_prompt(
         "请修复代码。"
     )
     return system_prompt, user_prompt
+
+
+# ═══════════════════════════════════════════
+# 存量资源导入 Prompt 模板
+# ═══════════════════════════════════════════
+
+
+def build_terraform_show_to_hcl_prompt(
+    show_output: str,
+    resource_type: str,
+    provider: str = "alicloud",
+) -> tuple[str, str]:
+    """
+    构建将 terraform show -json 输出转换为 HCL 配置的 Prompt。
+
+    用于 terraform import 后，从 state 中导出完整配置。
+    """
+    provider_name = "阿里云" if provider == "alicloud" else "Azure"
+
+    system_prompt = (
+        "你是一个 Terraform 配置提取专家。\n"
+        f"用户的存量资源已通过 terraform import 导入到 state，现在需要从 state 中提取完整的 HCL 配置。\n\n"
+        "要求：\n"
+        "1. 只输出纯 HCL 代码，不要包含任何解释、markdown 标记或代码块包围\n"
+        "2. 代码必须符合 Terraform 语法\n"
+        "3. 只输出 resource 块，不包含 provider 配置和 backend 配置\n"
+        "4. 从 show 输出中提取所有有值的参数，不要遗漏重要参数\n"
+        "5. 不要输出 computed 属性（如 id、creation_date 等由云平台自动生成的字段）\n"
+        "6. 不要添加任何注释行\n"
+        "7. 参数值必须使用 state 中的实际值\n"
+        f"8. 使用 {provider_name} 的 Terraform Provider 资源类型\n"
+        f"9. 严禁在 resource 块中使用 region/location 参数（region 由 provider 级别配置）\n"
+    )
+
+    user_prompt = (
+        f"请将以下 terraform show -json 输出转换为完整的 HCL 配置。\n\n"
+        f"资源类型: {resource_type}\n"
+        f"云平台: {provider_name}\n\n"
+        f"terraform show 输出:\n{show_output}\n\n"
+        "请直接输出 HCL 代码。"
+    )
+    return system_prompt, user_prompt
