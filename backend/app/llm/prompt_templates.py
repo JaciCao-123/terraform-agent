@@ -354,16 +354,18 @@ def build_terraform_generation_prompt(
 
     system_prompt = (
         f"你是一个 Terraform 配置生成专家，精通 {provider_name} 的 Terraform Provider。\n"
-        f"你的任务是根据用户提供的资源类型和参数，生成正确的 Terraform HCL 配置代码。\n"
+        f"你的任务是根据用户提供的资源类型、参数和自然语言补充需求，生成正确的 Terraform HCL 配置代码。\n"
         "要求：\n"
         "1. 只输出纯 HCL 代码，不要包含任何解释、markdown 标记或代码块包围\n"
         "2. 代码必须符合 Terraform 语法\n"
         "3. 只包含 resource 定义和必要的 output 输出，不包含 provider 配置和 backend 配置\n"
         f"4. 使用 {'alicloud_' if provider == 'alicloud' else 'azurerm_'} 前缀的资源类型\n"
-        "5. 参数值必须严格使用用户提供的值，不要自行修改或添加默认值\n"
-        "6. 不要添加任何注释行\n"
-        "7. 如果需要输出重要属性，可以添加 output 块\n"
-        "8. 表单参数优先于自然语言描述，如果两者冲突以表单参数为准\n"
+        "5. 表单提供的参数直接使用，不要自行修改。自然语言描述用于补充配置和调整参数\n"
+        "6. 如果用户通过自然语言补充了额外要求，必须满足这些要求\n"
+        "7. 如果自然语言提到了参数值但表单中没有，必须添加相应参数\n"
+        "8. 如果自然语言修改了某个参数，且表单参数冲突，以自然语言描述为准\n"
+        "9. 不要添加任何注释行\n"
+        "10. 如果需要输出重要属性，可以添加 output 块\n"
         f"{extra_rules}"
     )
 
