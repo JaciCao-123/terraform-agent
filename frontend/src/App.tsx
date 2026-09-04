@@ -340,6 +340,12 @@ const App: React.FC = () => {
                 updateStep(3, 'wait')
                 setCurrentStep(2)
               }}
+              onRollback={() => {
+                updateStep(2, 'wait')
+                updateStep(3, 'wait')
+                setCurrentStep(1)
+                message.info('已回滚，请重新配置')
+              }}
             />
           )}
 
@@ -431,6 +437,7 @@ const App: React.FC = () => {
                 message.success('Ansible 配置完成！')
               }}
               onBack={() => setAnsibleStep('playbook')}
+              onRollback={() => setAnsibleStep('playbook')}
             />
           )}
 
@@ -477,6 +484,7 @@ const App: React.FC = () => {
                     message.success('Ansible 配置完成！')
                   }}
                   onBack={() => setAnsibleStandaloneStep('playbook')}
+                  onRollback={() => setAnsibleStandaloneStep('playbook')}
                 />
               )}
             </>
