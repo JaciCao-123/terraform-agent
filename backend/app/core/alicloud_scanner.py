@@ -1,6 +1,6 @@
 """阿里云存量资源扫描器"""
 
-from typing import Optional
+from typing import Optional, Union
 
 from app.config import settings
 from app.core.resource_scanner import ResourceScanner
@@ -105,30 +105,24 @@ class AlicloudScanner(ResourceScanner):
     # ── OSS Bucket ──
 
     def _scan_oss(self) -> list[dict]:
-        import json
-        from aliyunsdkcore.request import CommonRequest
-        req = CommonRequest()
-        req.set_accept_format("json")
-        req.set_domain(f"oss-{self.region}.aliyuncs.com")
-        req.set_method("GET")
-        req.set_version("2019-05-17")
-        req.set_action_name("ListBuckets")
-        req.set_protocol_type("https")
-        resp = self._do_common_request(req, "Buckets")
-        if not resp:
+        try:
+            import oss2
+            auth = oss2.Auth(self.access_key, self.secret_key)
+            service = oss2.Service(auth, f"https://oss-{self.region}.aliyuncs.com")
+            result = []
+            for bucket in oss2.BucketIterator(service):
+                result.append({
+                    "id": bucket.name,
+                    "name": bucket.name,
+                    "type": "oss",
+                    "region": self.region,
+                    "storage_class": bucket.storage_class or "",
+                    "created_at": bucket.creation_date or "",
+                })
+            return result
+        except Exception as e:
+            print(f"[WARN] 阿里云 OSS 资源扫描失败: {e}")
             return []
-        buckets = resp.get("Bucket", []) if isinstance(resp, dict) else []
-        return [self._parse_oss(b) for b in buckets]
-
-    def _parse_oss(self, item: dict) -> dict:
-        return {
-            "id": item.get("Name", ""),
-            "name": item.get("Name", ""),
-            "type": "oss",
-            "region": item.get("Region", ""),
-            "storage_class": item.get("StorageClass", ""),
-            "created_at": item.get("CreationDate", ""),
-        }
 
     # ── VPC ──
 
@@ -254,7 +248,7 @@ class AlicloudScanner(ResourceScanner):
             print(f"[WARN] 阿里云资源扫描失败 ({list_key}): {e}")
             return []
 
-    def _do_common_request(self, req, data_key: str) -> Optional[list | dict]:
+    def _do_common_request(self, req, data_key: str) -> Optional[Union[list, dict]]:
         """执行 CommonRequest 并返回指定字段"""
         try:
             import json

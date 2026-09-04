@@ -19,6 +19,7 @@ aliyun-python-sdk-oss==2.2.0
 aliyun-python-sdk-redis==2.1.0
 aliyun-python-sdk-cdn==3.1.8
 aliyun-python-sdk-nas==1.1.2
+oss2==2.18.6
 azure-identity==1.19.0
 azure-mgmt-compute==33.1.0
 azure-mgmt-resource==23.2.0

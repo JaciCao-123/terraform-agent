@@ -329,10 +329,7 @@ class TerraformManager:
             # 3. terraform show 获取完整配置（用 LLM 整理）
             yield f"[INFO] 正在获取完整配置...\n"
             try:
-                show_output = await self.docker.exec_show_resource(
-                    resource_address=resource_address,
-                    provider=provider,
-                )
+                show_output = await self.docker.exec_show_resource(provider=provider)
                 if show_output:
                     # 用 LLM 将 show 输出整理成完整 HCL
                     from app.llm.prompt_templates import build_terraform_show_to_hcl_prompt

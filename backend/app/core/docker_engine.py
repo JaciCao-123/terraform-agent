@@ -144,6 +144,30 @@ provider "azurerm" {
 """
         return ""
 
+    def _build_variables_config(self, provider: str) -> str:
+        """生成变量声明配置"""
+        if provider == "alicloud":
+            return """variable "ALICLOUD_REGION" {
+  type    = string
+  default = "cn-hangzhou"
+}
+"""
+        elif provider == "azure":
+            return """variable "ARM_SUBSCRIPTION_ID" {
+  type = string
+}
+variable "ARM_CLIENT_ID" {
+  type = string
+}
+variable "ARM_CLIENT_SECRET" {
+  type = string
+}
+variable "ARM_TENANT_ID" {
+  type = string
+}
+"""
+        return ""
+
     def _build_backend_config(self, provider: str) -> str:
         """生成远程后端配置"""
         if provider == "alicloud":
@@ -212,10 +236,13 @@ provider "azurerm" {
         # 写入 provider 配置和后端配置
         provider_config = self._build_provider_config(provider)
         backend_config = self._build_backend_config(provider)
+        variables_config = self._build_variables_config(provider)
         with open(os.path.join(work_dir, "provider.tf"), "w") as f:
             f.write(provider_config)
         with open(os.path.join(work_dir, "backend.tf"), "w") as f:
             f.write(backend_config)
+        with open(os.path.join(work_dir, "variables.tf"), "w") as f:
+            f.write(variables_config)
 
         container_env = self._build_env_vars(provider, env_vars)
 
@@ -246,13 +273,16 @@ provider "azurerm" {
         """
         work_dir = tempfile.mkdtemp(prefix="terraform-agent-import-")
 
-        # 写入 provider 配置、后端配置和 HCL 骨架
+        # 写入 provider 配置、后端配置、变量声明和 HCL 骨架
         provider_config = self._build_provider_config(provider)
         backend_config = self._build_backend_config(provider)
+        variables_config = self._build_variables_config(provider)
         with open(os.path.join(work_dir, "provider.tf"), "w") as f:
             f.write(provider_config)
         with open(os.path.join(work_dir, "backend.tf"), "w") as f:
             f.write(backend_config)
+        with open(os.path.join(work_dir, "variables.tf"), "w") as f:
+            f.write(variables_config)
         with open(os.path.join(work_dir, "main.tf"), "w") as f:
             f.write(hcl_skeleton)
 
@@ -263,13 +293,12 @@ provider "azurerm" {
             yield line
 
         # import
-        import_cmd = ["import", f"-input=false", f"{resource_address}={resource_id}", "-no-color"]
+        import_cmd = ["import", f"-input=false", resource_address, resource_id, "-no-color"]
         async for line in self._run_container(work_dir, import_cmd, container_env):
             yield line
 
     async def exec_show_resource(
         self,
-        resource_address: str,
         provider: str = "alicloud",
     ) -> str:
         """
