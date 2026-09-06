@@ -110,7 +110,11 @@ class AlicloudScanner(ResourceScanner):
             auth = oss2.Auth(self.access_key, self.secret_key)
             service = oss2.Service(auth, f"https://oss-{self.region}.aliyuncs.com")
             result = []
+            # 跳过存储 tfstate 的 OSS Bucket，防止误操作
+            state_bucket = getattr(settings, "oss_bucket", "")
             for bucket in oss2.BucketIterator(service):
+                if bucket.name == state_bucket:
+                    continue
                 result.append({
                     "id": bucket.name,
                     "name": bucket.name,
